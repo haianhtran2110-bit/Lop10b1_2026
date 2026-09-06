@@ -912,13 +912,18 @@ async function renderKyLuat(subHtml){
     </div>`;
   }).join('');
 
-  const recent = log.filter(e=> students.some(s=>s.id===e.studentId)).slice().reverse().slice(0,20).map(e=>{
+  const isGVCN = state.unlocked['gvcn'];
+  const recent = log.filter(e=> students.some(s=>s.id===e.studentId))
+    .slice().sort((a,b)=> b.value - a.value).slice(0,20).map(e=>{
     const name = state.roster.find(s=>s.id===e.studentId)?.name || '(đã xoá)';
     const isCong = e.type==='cong';
-    return `<div class="disc-entry">
+    return `<div class="disc-entry" data-disc-id="${e.id}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
         <span style="flex:1;"><b>${escapeHtml(name)}</b> — <span style="color:var(--muted);">${escapeHtml(e.category)}${e.note?(' · '+escapeHtml(e.note)):''}</span></span>
-        <span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span>
+          ${isGVCN ? `<button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>` : ''}
+        </div>
       </div>
       <div class="week-sub">${formatDateVN(e.date)}</div>
     </div>`;
@@ -1141,6 +1146,19 @@ function attachHandlers(){
     disciplineForm.studentId=''; disciplineForm.category='';
     renderAsync();
   };
+
+  app.querySelectorAll('[data-act="del-disc"]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.discId;
+      const month = btn.dataset.discMonth;
+      if(!confirm('Xoá ghi nhận này?')) return;
+      const log = await getMonthLog(month);
+      const updated = log.filter(e=>e.id !== id);
+      await sset('discipline:log:'+month, updated);
+      showToast('✓ Đã xoá');
+      renderAsync();
+    };
+  });
 }
 
 init();
