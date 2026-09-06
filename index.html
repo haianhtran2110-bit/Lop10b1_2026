@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sổ quản lý lớp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F3E8;
+    --paper-line:rgba(31,42,68,0.10);
+    --ink:#1F2A44;
+    --ink-soft:#5B6580;
+    --red:#B23A2E;      /* Lớp trưởng */
+    --red-bg:#F6E4E1;
+    --blue:#2E5FA3;     /* LP học tập */
+    --blue-bg:#E2E9F4;
+    --green:#3A7D44;    /* LP lao động */
+    --green-bg:#E3EEE4;
+    --amber:#A9791F;    /* LP kỷ luật */
+    --amber-bg:#F3E9D3;
+    --ok:#3A7D44;
+    --warn:#A9791F;
+    --bad:#B23A2E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Be Vietnam Pro',system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      repeating-linear-gradient(var(--paper), var(--paper) 27px, var(--paper-line) 28px),
+      var(--paper);
+    min-height:100vh;
+  }
+  .app{max-width:520px;margin:0 auto;padding-bottom:84px;}
+  .cover{
+    padding:22px 18px 16px;
+    color:#fff;
+    transition:background .25s ease;
+  }
+  .cover .role-label{font-size:12px;letter-spacing:.02em;opacity:.85;margin:0 0 2px;}
+  .cover h1{margin:0;font-size:22px;font-weight:800;}
+  .cover .sub{margin:4px 0 0;font-size:13px;opacity:.9;}
+  .datebar{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 18px;background:rgba(255,255,255,0.55);
+    border-bottom:1px solid var(--paper-line);
+    position:sticky;top:0;backdrop-filter:blur(4px);z-index:5;
+  }
+  .datebar input[type=date]{
+    font-family:inherit;font-size:14px;border:1px solid var(--paper-line);
+    background:#fff;border-radius:8px;padding:6px 8px;color:var(--ink);
+  }
+  .datebar .today-btn{
+    font-size:12px;background:#fff;border:1px solid var(--paper-line);
+    border-radius:8px;padding:6px 10px;color:var(--ink-soft);
+  }
+  main{padding:14px 16px 6px;}
+  h2.section{font-size:15px;font-weight:700;margin:18px 0 8px;color:var(--ink);}
+  .card{
+    background:#fff;border-radius:10px;border:1px solid var(--paper-line);
+    padding:12px;margin-bottom:10px;
+  }
+  .row{display:flex;align-items:center;gap:10px;padding:8px 0;}
+  .row + .row{border-top:1px solid var(--paper-line);}
+  .name{flex:1;font-size:15px;font-weight:500;}
+  .idx{width:20px;font-size:12px;color:var(--ink-soft);}
+  .seg{display:flex;border:1px solid var(--paper-line);border-radius:8px;overflow:hidden;}
+  .seg button{
+    border:none;background:#fff;padding:6px 10px;font-size:12.5px;font-family:inherit;
+    color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+  }
+  .seg button + button{border-left:1px solid var(--paper-line);}
+  .seg button.on-ok{background:var(--ok);color:#fff;}
+  .seg button.on-warn{background:var(--warn);color:#fff;}
+  .seg button.on-bad{background:var(--bad);color:#fff;}
+  .note-input{
+    width:100%;margin-top:6px;font-family:inherit;font-size:13px;
+    border:1px solid var(--paper-line);border-radius:6px;padding:6px 8px;background:#FCFAF4;
+  }
+  .stat-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .pill{
+    background:#fff;border:1px solid var(--paper-line);border-radius:999px;
+    padding:6px 12px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .pill b{color:var(--ink);}
+  .counter-card{display:flex;align-items:center;justify-content:space-between;}
+  .counter-num{font-size:28px;font-weight:800;}
+  .counter-num.ok{color:var(--ok);}
+  .counter-btns{display:flex;gap:8px;}
+  .counter-btns button{
+    width:38px;height:38px;border-radius:8px;border:1px solid var(--paper-line);
+    background:#fff;font-size:18px;color:var(--ink);
+  }
+  .check-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;}
+  .check-row input{width:20px;height:20px;}
+  .tabbar{
+    position:fixed;bottom:0;left:0;right:0;
+    display:flex;background:#fff;border-top:1px solid var(--paper-line);
+    max-width:520px;margin:0 auto;
+  }
+  .tabbar button{
+    flex:1;border:none;background:none;padding:9px 4px 8px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-family:inherit;color:var(--ink-soft);font-size:11px;
+  }
+  .tabbar button .dot{width:8px;height:8px;border-radius:50%;background:var(--paper-line);}
+  .tabbar button.active{color:var(--ink);font-weight:700;}
+  .tabbar button.active .dot{background:var(--role-color,var(--ink));}
+  .subtab{display:flex;gap:6px;margin-bottom:12px;}
+  .subtab button{
+    font-family:inherit;font-size:12.5px;padding:7px 12px;border-radius:8px;
+    border:1px solid var(--paper-line);background:#fff;color:var(--ink-soft);
+  }
+  .subtab button.active{background:var(--role-color);color:#fff;border-color:var(--role-color);}
+  .roster-edit-row{display:flex;gap:8px;align-items:center;padding:6px 0;}
+  .roster-edit-row input[type=text]{
+    flex:1;font-family:inherit;font-size:14px;border:1px solid var(--paper-line);
+    border-radius:6px;padding:7px 8px;background:#FCFAF4;
+  }
+  .rm-btn{border:none;background:none;color:var(--bad);font-size:18px;padding:4px 6px;}
+  .add-btn,.primary-btn{
+    width:100%;padding:11px;border-radius:8px;border:none;
+    background:var(--ink);color:#fff;font-family:inherit;font-weight:600;font-size:14px;margin-top:6px;
+  }
+  .primary-btn.role{background:var(--role-color);}
+  .empty{text-align:center;color:var(--ink-soft);font-size:13px;padding:24px 8px;}
+  .badge-flag{
+    display:inline-block;margin-left:6px;font-size:11px;background:var(--red-bg);
+    color:var(--red);border-radius:6px;padding:2px 6px;font-weight:700;
+  }
+  .week-name{font-weight:600;font-size:14px;}
+  .week-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .bar-wrap{background:var(--paper-line);border-radius:4px;height:6px;margin-top:6px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--amber);}
+  .disc-entry{padding:8px 0;border-top:1px solid var(--paper-line);font-size:13px;}
+  .disc-entry:first-child{border-top:none;}
+  .disc-pts{font-weight:800;}
+  .disc-pts.pos{color:var(--ok);}
+  .disc-pts.neg{color:var(--bad);}
+  .quickpts{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+  .quickpts button{
+    border:1px solid var(--paper-line);background:#fff;border-radius:8px;
+    padding:6px 10px;font-family:inherit;font-size:13px;font-weight:700;
+  }
+  select,.sel{
+    font-family:inherit;font-size:13.5px;border:1px solid var(--paper-line);
+    border-radius:8px;padding:7px 8px;background:#fff;color:var(--ink);width:100%;
+  }
+  label.field-label{font-size:12px;color:var(--ink-soft);display:block;margin:8px 0 3px;}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:7px 0;}
+  .lb-rank{width:20px;font-weight:700;color:var(--ink-soft);font-size:13px;}
+  .lb-score{font-weight:800;min-width:34px;text-align:right;}
+  .toast{
+    position:fixed;bottom:92px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:8px 16px;border-radius:20px;
+    font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:20;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const ROLES = {
+  home:{label:'Danh sách lớp', short:'Lớp',      color:'#1F2A44', bg:'#1F2A44'},
+  lt:  {label:'Lớp trưởng',    short:'Lớp trưởng', color:'#B23A2E', bg:'#B23A2E'},
+  hoctap:{label:'LP Học tập',  short:'Học tập',   color:'#2E5FA3', bg:'#2E5FA3'},
+  laodong:{label:'LP Lao động',short:'Lao động',  color:'#3A7D44', bg:'#3A7D44'},
+  kyluat:{label:'LP Kỷ luật',  short:'Kỷ luật',   color:'#A9791F', bg:'#A9791F'},
+};
+
+let state = {
+  tab: 'home',
+  date: todayStr(),
+  roster: null,      // [{id,name}]
+  loading: true,
+  sub: {hoctap:'today', laodong:'today', kyluat:'log'},
+};
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+// ====== CẤU HÌNH KHO DỮ LIỆU (Google Sheets qua Apps Script) ======
+// 1. Dán URL Web App sau khi Deploy Apps Script vào đây
+// 2. Đặt TOKEN trùng với TOKEN trong code Apps Script
+const API_URL = 'DÁN_URL_APPS_SCRIPT_VÀO_ĐÂY';
+const API_TOKEN = 'doi-token-nay';
+// ====================================================================
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._h);
+  showToast._h = setTimeout(()=>t.classList.remove('show'), 1400);
+}
+
+// ---------- storage helpers (Google Sheets qua Apps Script) ----------
+async function sget(key){
+  try{
+    const url = `${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    return data.value ? JSON.parse(data.value) : null;
+  } catch(e){
+    console.error('sget failed', key, e);
+    return null;
+  }
+}
+async function sset(key, value){
+  try{
+    // gửi dạng text/plain để trình duyệt không phải hỏi CORS trước (preflight)
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action:'set', key, value: JSON.stringify(value), token: API_TOKEN })
+    });
+    const data = await res.json();
+    return !!data.ok;
+  } catch(e){
+    console.error('sset failed', key, e);
+    showToast('Lỗi lưu dữ liệu — kiểm tra kết nối mạng');
+    return false;
+  }
+}
+
+async function loadRoster(){
+  let r = await sget('roster');
+  state.roster = Array.isArray(r) ? r : [];
+}
+async function saveRoster(){
+  await sset('roster', state.roster);
+}
+
+// ---------- init ----------
+async function init(){
+  if(!API_URL || API_URL.indexOf('DÁN_URL') === 0){
+    document.getElementById('app').innerHTML = `
+      <div style="padding:32px 20px;text-align:center;color:#1F2A44;">
+        <h2 style="margin-bottom:8px;">Chưa gắn kho dữ liệu</h2>
+        <p style="color:#5B6580;font-size:14px;">
+          Mở file này bằng trình soạn thảo, tìm dòng <code>API_URL</code> gần đầu file &lt;script&gt;
+          và dán URL Web App Google Apps Script vào đó, rồi tải lại trang.
+        </p>
+      </div>`;
+    return;
+  }
+  await loadRoster();
+  state.loading = false;
+  render();
+}
+
+// ============ RENDER ============
+function render(){
+  const app = document.getElementById('app');
+  const role = ROLES[state.tab];
+  let coverHtml, mainHtml;
+
+  if(state.loading){
+    app.innerHTML = '<div style="padding:40px;text-align:center;color:#5B6580;">Đang tải…</div>';
+    return;
+  }
+
+  if(state.tab === 'home'){
+    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh — sổ dùng chung cho cả 4 cán bộ lớp`, role.bg, null);
+    mainHtml = renderHome();
+  } else if(state.tab === 'lt'){
+    coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.bg, true);
+    mainHtml = renderLT();
+  } else if(state.tab === 'hoctap'){
+    coverHtml = cover('LP Học tập', 'Truy bài đầu giờ (15 phút)', role.bg, true);
+    mainHtml = renderHocTap();
+  } else if(state.tab === 'laodong'){
+    coverHtml = cover('LP Lao động', 'Phân công & kiểm tra trực nhật', role.bg, true);
+    mainHtml = renderLaoDong();
+  } else if(state.tab === 'kyluat'){
+    coverHtml = cover('LP Kỷ luật', 'Điểm nền nếp · Khen · Nhắc nhở', role.bg, false);
+    mainHtml = renderKyLuat();
+  }
+
+  app.innerHTML = coverHtml + mainHtml + tabbar();
+  attachHandlers();
+}
+
+function cover(title, sub, bg, showDate){
+  const dateBar = showDate ? `
+    <div class="datebar">
+      <input type="date" id="dateInput" value="${state.date}">
+      <button class="today-btn" data-act="today">Hôm nay</button>
+    </div>` : '';
+  return `
+    <div class="cover" style="background:${bg}">
+      <p class="role-label">SỔ QUẢN LÝ LỚP</p>
+      <h1>${title}</h1>
+      <p class="sub">${sub}</p>
+    </div>
+    ${dateBar}
+  `;
+}
+
+function tabbar(){
+  return `<div class="tabbar">
+    ${Object.entries(ROLES).map(([key,r])=>`
+      <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
+        <span class="dot"></span>${r.short}
+      </button>
+    `).join('')}
+  </div>`;
+}
+
+// ---------- HOME: roster editor ----------
+function renderHome(){
+  const rows = state.roster.map((s,i)=>`
+    <div class="roster-edit-row" data-id="${s.id}">
+      <span class="idx">${i+1}</span>
+      <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
+      <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
+    </div>
+  `).join('');
+  return `
+    <main>
+      <h2 class="section">Danh sách học sinh (${state.roster.length})</h2>
+      <div class="card">
+        ${rows || '<p class="empty">Chưa có học sinh nào. Bấm "Thêm học sinh" bên dưới.</p>'}
+        <button class="add-btn" data-act="add-student" style="background:#fff;color:var(--ink);border:1px dashed var(--paper-line);">+ Thêm học sinh</button>
+      </div>
+      <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
+      <p style="text-align:center;font-size:12px;color:var(--ink-soft);margin-top:10px;">
+        Danh sách này dùng chung cho cả 4 vai trò — sửa ở đây sẽ cập nhật cho tất cả.
+      </p>
+    </main>
+  `;
+}
+
+// ---------- LỚP TRƯỞNG ----------
+let ltData = null; // cache for current date
+async function renderLT(){
+  ltData = await sget('attendance:'+state.date) || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
+  const present = state.roster.filter(s => (ltData.status[s.id]||'present')==='present').length;
+  const rows = state.roster.map((s,i)=>{
+    const st = ltData.status[s.id] || 'present';
+    return `
+    <div class="row">
+      <span class="idx">${i+1}</span>
+      <span class="name">${escapeHtml(s.name)}</span>
+      <div class="seg" data-id="${s.id}" data-group="att">
+        <button data-val="present" class="${st==='present'?'on-ok':''}">Có mặt</button>
+        <button data-val="late" class="${st==='late'?'on-warn':''}">Muộn</button>
+        <button data-val="absent" class="${st==='absent'?'on-bad':''}">Vắng</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const phoneOk = ltData.phoneCount === present && state.roster.length>0;
+
+  setTimeout(()=>{ /* placeholder for future async paint if needed */ },0);
+
+  return renderLTBody(rows, present, phoneOk);
+}
+function renderLTBody(rows, present, phoneOk){
+  return `
+    <main>
+      <div class="stat-strip">
+        <span class="pill">Sĩ số: <b>${state.roster.length}</b></span>
+        <span class="pill">Có mặt: <b>${present}</b></span>
+      </div>
+
+      <h2 class="section">Điểm danh</h2>
+      <div class="card">
+        ${rows || '<p class="empty">Chưa có học sinh — vào tab "Lớp" để nhập danh sách.</p>'}
+      </div>
+
+      <h2 class="section">Thu điện thoại đầu giờ</h2>
+      <div class="card counter-card">
+        <div>
+          <div class="counter-num ${phoneOk?'ok':''}" id="phoneCountNum">${ltData.phoneCount}</div>
+          <div class="week-sub">/ ${present} bạn có mặt ${phoneOk ? '— Đủ ✓' : ''}</div>
+        </div>
+        <div class="counter-btns">
+          <button data-act="phone-dec">−</button>
+          <button data-act="phone-inc">+</button>
+        </div>
+      </div>
+
+      <h2 class="section">Hòm điện thoại</h2>
+      <div class="card">
+        <label class="check-row">
+          <input type="checkbox" data-act="chk-open" ${ltData.openedBox?'checked':''}>
+          Đã mở hòm đầu giờ
+        </label>
+        <label class="check-row">
+          <input type="checkbox" data-act="chk-close" ${ltData.closedBox?'checked':''}>
+          Đã dọn hòm cuối giờ
+        </label>
+      </div>
+    </main>
+  `;
+}
+
+// ---------- LỚP PHÓ HỌC TẬP ----------
+let htData = null;
+async function renderHocTap(){
+  if(state.sub.hoctap === 'today'){
+    htData = await sget('study:'+state.date) || {status:{}, note:{}};
+    const rows = state.roster.map((s,i)=>{
+      const st = htData.status[s.id] || 'full';
+      return `
+      <div class="row" style="flex-wrap:wrap;">
+        <span class="idx">${i+1}</span>
+        <span class="name">${escapeHtml(s.name)}</span>
+        <div class="seg" data-id="${s.id}" data-group="study">
+          <button data-val="full" class="${st==='full'?'on-ok':''}">Đủ bài</button>
+          <button data-val="partial" class="${st==='partial'?'on-warn':''}">Thiếu</button>
+          <button data-val="none" class="${st==='none'?'on-bad':''}">Không làm</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `
+      <main>
+        ${subtabs('hoctap', [['today','Hôm nay'],['week','Tổng hợp tuần']])}
+        <h2 class="section">Truy bài 15 phút đầu giờ</h2>
+        <div class="card">${rows || emptyRoster()}</div>
+      </main>
+    `;
+  } else {
+    const weekData = await computeWeekly();
+    const rows = state.roster.map(s=>{
+      const c = weekData[s.id] || {partial:0, none:0};
+      const issues = c.partial + c.none;
+      const flagged = issues >= 3;
+      const pct = Math.min(100, issues*100/7);
+      return `
+      <div class="card" style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span class="week-name">${escapeHtml(s.name)}${flagged?'<span class="badge-flag">Cần chú ý</span>':''}</span>
+          <span class="week-sub">${issues} lần thiếu/không làm</span>
+        </div>
+        <div class="week-sub">Thiếu bài: ${c.partial} · Không làm bài: ${c.none}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${flagged?'var(--bad)':'var(--amber)'}"></div></div>
+      </div>`;
+    }).join('');
+    return `
+      <main>
+        ${subtabs('hoctap', [['today','Hôm nay'],['week','Tổng hợp tuần']])}
+        <h2 class="section">7 ngày gần nhất</h2>
+        <p class="week-sub" style="margin-bottom:10px;">Bạn nào có từ 3 lần thiếu/không làm bài trở lên sẽ được đánh dấu "Cần chú ý".</p>
+        ${rows || emptyRoster()}
+      </main>
+    `;
+  }
+}
+async function computeWeekly(){
+  const dates = [];
+  const d = new Date(state.date+'T00:00:00');
+  for(let i=0;i<7;i++){
+    const dd = new Date(d); dd.setDate(d.getDate()-i);
+    dates.push(dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0'));
+  }
+  const result = {};
+  for(const dt of dates){
+    const rec = await sget('study:'+dt);
+    if(!rec) continue;
+    for(const [sid, st] of Object.entries(rec.status||{})){
+      if(!result[sid]) result[sid] = {partial:0, none:0};
+      if(st==='partial') result[sid].partial++;
+      if(st==='none') result[sid].none++;
+    }
+  }
+  return result;
+}
+
+// ---------- LỚP PHÓ LAO ĐỘNG ----------
+let ldConfig = null;
+async function renderLaoDong(){
+  ldConfig = await sget('duty:config') || {groupSize:4, startDate: state.date, order: state.roster.map(s=>s.id)};
+  // keep order in sync with roster (append new students)
+  const rosterIds = state.roster.map(s=>s.id);
+  ldConfig.order = ldConfig.order.filter(id=>rosterIds.includes(id));
+  for(const id of rosterIds){ if(!ldConfig.order.includes(id)) ldConfig.order.push(id); }
+
+  const dayData = await sget('duty:'+state.date) || {assigned: computeAssigned(state.date), checked:null, note:''};
+
+  if(state.sub.laodong === 'today'){
+    const names = dayData.assigned.map(id=> state.roster.find(s=>s.id===id)?.name || '?');
+    const listHtml = names.map((n,i)=>`<div class="row"><span class="idx">${i+1}</span><span class="name">${escapeHtml(n)}</span></div>`).join('');
+    return `
+      <main>
+        ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
+        <h2 class="section">Nhóm trực nhật hôm nay</h2>
+        <div class="card">${listHtml || emptyRoster()}</div>
+
+        <h2 class="section">Kiểm tra cuối giờ</h2>
+        <div class="card">
+          <div class="seg" data-group="duty-check" style="width:100%;">
+            <button data-val="pass" style="flex:1;${dayData.checked==='pass'?'background:var(--ok);color:#fff;':''}">Đạt</button>
+            <button data-val="fail" style="flex:1;${dayData.checked==='fail'?'background:var(--bad);color:#fff;':''}">Chưa đạt</button>
+          </div>
+          <textarea class="note-input" id="dutyNote" rows="2" placeholder="Ghi chú (vd: bảng chưa lau, sọt rác đầy...)">${escapeHtml(dayData.note||'')}</textarea>
+          <button class="primary-btn role" data-act="save-duty-note">Lưu nhận xét</button>
+        </div>
+      </main>
+    `;
+  } else if(state.sub.laodong === 'upcoming'){
+    let rows = '';
+    const d0 = new Date(state.date+'T00:00:00');
+    for(let i=0;i<7;i++){
+      const dd = new Date(d0); dd.setDate(d0.getDate()+i);
+      const ds = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+      const ids = computeAssigned(ds);
+      const names = ids.map(id=> state.roster.find(s=>s.id===id)?.name || '?').join(', ');
+      rows += `<div class="card" style="margin-bottom:8px;">
+        <div class="week-name">${formatDateVN(ds)}${i===0?' (hôm nay)':''}</div>
+        <div class="week-sub">${names || '—'}</div>
+      </div>`;
+    }
+    return `
+      <main>
+        ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
+        <h2 class="section">Lịch trực 7 ngày tới</h2>
+        ${rows}
+      </main>
+    `;
+  } else {
+    return `
+      <main>
+        ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
+        <h2 class="section">Cài đặt vòng quay trực nhật</h2>
+        <div class="card">
+          <label class="field-label">Số bạn trực mỗi buổi</label>
+          <input type="text" inputmode="numeric" class="note-input" id="groupSizeInput" value="${ldConfig.groupSize}">
+          <label class="field-label">Ngày bắt đầu vòng quay</label>
+          <input type="date" class="note-input" id="startDateInput" value="${ldConfig.startDate}">
+          <button class="primary-btn role" data-act="save-duty-config">Lưu cài đặt</button>
+        </div>
+        <p class="week-sub">Vòng quay chia học sinh theo đúng thứ tự trong danh sách lớp, xoay đều từng nhóm mỗi buổi học.</p>
+      </main>
+    `;
+  }
+}
+function computeAssigned(dateStr){
+  if(!ldConfig || ldConfig.order.length===0) return [];
+  const start = new Date(ldConfig.startDate+'T00:00:00');
+  const cur = new Date(dateStr+'T00:00:00');
+  const dayIndex = Math.floor((cur-start)/86400000);
+  const n = ldConfig.order.length;
+  const size = Math.max(1, parseInt(ldConfig.groupSize)||1);
+  const groups = Math.ceil(n/size);
+  if(dayIndex < 0 || groups===0) return ldConfig.order.slice(0,size);
+  const g = ((dayIndex % groups)+groups) % groups;
+  return ldConfig.order.slice(g*size, g*size+size);
+}
+
+// ---------- LỚP PHÓ KỶ LUẬT ----------
+const BASE_SCORE = 100;
+async function renderKyLuat(){
+  const log = await sget('discipline:log') || [];
+  const scores = {};
+  state.roster.forEach(s=> scores[s.id] = BASE_SCORE);
+  log.forEach(e=>{ if(scores[e.studentId]!==undefined) scores[e.studentId] += e.points; });
+
+  if(state.sub.kyluat === 'log'){
+    const recent = log.slice().reverse().slice(0,25).map(e=>{
+      const name = state.roster.find(s=>s.id===e.studentId)?.name || '(đã xoá)';
+      const cls = e.points>0?'pos':'neg';
+      const sign = e.points>0?'+':'';
+      return `<div class="disc-entry">
+        <div style="display:flex;justify-content:space-between;">
+          <span><b>${escapeHtml(name)}</b> — ${escapeHtml(e.reason||'')}</span>
+          <span class="disc-pts ${cls}">${sign}${e.points}</span>
+        </div>
+        <div class="week-sub">${formatDateVN(e.date)}</div>
+      </div>`;
+    }).join('');
+
+    const options = state.roster.map(s=>`<option value="${s.id}">${escapeAttr(s.name)}</option>`).join('');
+
+    return `
+      <main>
+        ${subtabs('kyluat', [['log','Ghi nhận'],['board','Bảng điểm']])}
+        <h2 class="section">Thêm ghi nhận mới</h2>
+        <div class="card">
+          <label class="field-label">Học sinh</label>
+          <select class="sel" id="discStudent">${options}</select>
+          <label class="field-label">Điểm (cộng hoặc trừ)</label>
+          <div class="quickpts">
+            <button data-pts="1">+1</button>
+            <button data-pts="2">+2</button>
+            <button data-pts="5">+5</button>
+            <button data-pts="-1">−1</button>
+            <button data-pts="-2">−2</button>
+            <button data-pts="-5">−5</button>
+          </div>
+          <input type="text" inputmode="numeric" class="note-input" id="discPoints" placeholder="Hoặc nhập số điểm, vd: -3">
+          <label class="field-label">Lý do</label>
+          <input type="text" class="note-input" id="discReason" placeholder="vd: nói chuyện riêng / giúp đỡ bạn / trực nhật tốt...">
+          <button class="primary-btn role" data-act="add-disc">Lưu ghi nhận</button>
+        </div>
+
+        <h2 class="section">Gần đây</h2>
+        <div class="card">${recent || '<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
+      </main>
+    `;
+  } else {
+    const sorted = state.roster.slice().sort((a,b)=> (scores[b.id]||0)-(scores[a.id]||0));
+    const rows = sorted.map((s,i)=>`
+      <div class="lb-row">
+        <span class="lb-rank">${i+1}</span>
+        <span class="name">${escapeHtml(s.name)}</span>
+        <span class="lb-score" style="color:${scores[s.id]>=BASE_SCORE?'var(--ok)':'var(--bad)'}">${scores[s.id]}</span>
+      </div>
+    `).join('');
+    return `
+      <main>
+        ${subtabs('kyluat', [['log','Ghi nhận'],['board','Bảng điểm']])}
+        <h2 class="section">Bảng điểm nền nếp (mốc chuẩn ${BASE_SCORE})</h2>
+        <div class="card">${rows || emptyRoster()}</div>
+      </main>
+    `;
+  }
+}
+
+// ---------- shared bits ----------
+function subtabs(group, items){
+  return `<div class="subtab">${items.map(([key,label])=>
+    `<button data-subtab="${group}:${key}" class="${state.sub[group]===key?'active':''}">${label}</button>`
+  ).join('')}</div>`;
+}
+function emptyRoster(){
+  return '<p class="empty">Chưa có học sinh — vào tab "Lớp" để nhập danh sách.</p>';
+}
+function formatDateVN(ds){
+  const [y,m,d] = ds.split('-');
+  return `${d}/${m}/${y}`;
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+// ============ EVENT HANDLING ============
+function attachHandlers(){
+  const app = document.getElementById('app');
+
+  // tab bar
+  app.querySelectorAll('[data-tab]').forEach(btn=>{
+    btn.onclick = ()=>{ state.tab = btn.dataset.tab; render(); };
+  });
+  // subtabs
+  app.querySelectorAll('[data-subtab]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const [group,key] = btn.dataset.subtab.split(':');
+      state.sub[group] = key;
+      renderAsync();
+    };
+  });
+  // date
+  const dateInput = document.getElementById('dateInput');
+  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; renderAsync(); };
+  const todayBtn = app.querySelector('[data-act="today"]');
+  if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
+
+  // ---- HOME ----
+  const addStudentBtn = app.querySelector('[data-act="add-student"]');
+  if(addStudentBtn) addStudentBtn.onclick = ()=>{
+    state.roster.push({id:uid(), name:''});
+    render();
+    const inputs = app.querySelectorAll('.rname');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  };
+  app.querySelectorAll('[data-act="rm-student"]').forEach(btn=>{
+    btn.onclick = ()=>{
+      state.roster = state.roster.filter(s=>s.id!==btn.dataset.id);
+      render();
+    };
+  });
+  app.querySelectorAll('.rname').forEach((inp,i)=>{
+    inp.oninput = ()=>{ state.roster[i].name = inp.value; };
+  });
+  const saveRosterBtn = app.querySelector('[data-act="save-roster"]');
+  if(saveRosterBtn) saveRosterBtn.onclick = async ()=>{
+    state.roster = state.roster.filter(s=>s.name.trim()!=='');
+    await saveRoster();
+    showToast('Đã lưu danh sách lớp');
+    render();
+  };
+
+  // ---- LT: attendance segments ----
+  app.querySelectorAll('[data-group="att"]').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(btn=>{
+      btn.onclick = async ()=>{
+        ltData.status[seg.dataset.id] = btn.dataset.val;
+        await sset('attendance:'+state.date, ltData);
+        renderAsync();
+      };
+    });
+  });
+  const phoneInc = app.querySelector('[data-act="phone-inc"]');
+  const phoneDec = app.querySelector('[data-act="phone-dec"]');
+  if(phoneInc) phoneInc.onclick = async ()=>{
+    ltData.phoneCount = Math.min(state.roster.length, (ltData.phoneCount||0)+1);
+    await sset('attendance:'+state.date, ltData);
+    renderAsync();
+  };
+  if(phoneDec) phoneDec.onclick = async ()=>{
+    ltData.phoneCount = Math.max(0, (ltData.phoneCount||0)-1);
+    await sset('attendance:'+state.date, ltData);
+    renderAsync();
+  };
+  const chkOpen = app.querySelector('[data-act="chk-open"]');
+  if(chkOpen) chkOpen.onchange = async ()=>{ ltData.openedBox = chkOpen.checked; await sset('attendance:'+state.date, ltData); };
+  const chkClose = app.querySelector('[data-act="chk-close"]');
+  if(chkClose) chkClose.onchange = async ()=>{ ltData.closedBox = chkClose.checked; await sset('attendance:'+state.date, ltData); };
+
+  // ---- HOC TAP: study segments ----
+  app.querySelectorAll('[data-group="study"]').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(btn=>{
+      btn.onclick = async ()=>{
+        htData.status[seg.dataset.id] = btn.dataset.val;
+        await sset('study:'+state.date, htData);
+        renderAsync();
+      };
+    });
+  });
+
+  // ---- LAO DONG ----
+  app.querySelectorAll('[data-group="duty-check"] button').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const d = await sget('duty:'+state.date) || {assigned: computeAssigned(state.date), checked:null, note:''};
+      d.checked = btn.dataset.val;
+      await sset('duty:'+state.date, d);
+      renderAsync();
+    };
+  });
+  const saveDutyNoteBtn = app.querySelector('[data-act="save-duty-note"]');
+  if(saveDutyNoteBtn) saveDutyNoteBtn.onclick = async ()=>{
+    const noteEl = document.getElementById('dutyNote');
+    const d = await sget('duty:'+state.date) || {assigned: computeAssigned(state.date), checked:null, note:''};
+    d.note = noteEl.value;
+    await sset('duty:'+state.date, d);
+    showToast('Đã lưu nhận xét trực nhật');
+  };
+  const saveDutyConfigBtn = app.querySelector('[data-act="save-duty-config"]');
+  if(saveDutyConfigBtn) saveDutyConfigBtn.onclick = async ()=>{
+    const size = parseInt(document.getElementById('groupSizeInput').value)||1;
+    const start = document.getElementById('startDateInput').value || state.date;
+    ldConfig.groupSize = Math.max(1, size);
+    ldConfig.startDate = start;
+    await sset('duty:config', ldConfig);
+    showToast('Đã lưu cài đặt vòng quay');
+    renderAsync();
+  };
+
+  // ---- KY LUAT ----
+  app.querySelectorAll('.quickpts button').forEach(btn=>{
+    btn.onclick = ()=>{ document.getElementById('discPoints').value = btn.dataset.pts; };
+  });
+  const addDiscBtn = app.querySelector('[data-act="add-disc"]');
+  if(addDiscBtn) addDiscBtn.onclick = async ()=>{
+    const studentId = document.getElementById('discStudent').value;
+    const ptsRaw = document.getElementById('discPoints').value.trim();
+    const reason = document.getElementById('discReason').value.trim();
+    const pts = parseInt(ptsRaw);
+    if(!studentId || isNaN(pts)){ showToast('Chọn học sinh và nhập điểm hợp lệ'); return; }
+    const log = await sget('discipline:log') || [];
+    log.push({id:uid(), studentId, points:pts, reason, date: state.date});
+    await sset('discipline:log', log);
+    showToast('Đã lưu ghi nhận');
+    renderAsync();
+  };
+}
+
+async function renderAsync(){
+  // re-run full render pipeline (role bodies fetch their own data)
+  const app = document.getElementById('app');
+  const role = ROLES[state.tab];
+  let coverHtml, mainHtml;
+
+  if(state.tab === 'home'){
+    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh — sổ dùng chung cho cả 4 cán bộ lớp`, role.bg, null);
+    mainHtml = renderHome();
+  } else if(state.tab === 'lt'){
+    coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.bg, true);
+    mainHtml = await renderLT();
+  } else if(state.tab === 'hoctap'){
+    coverHtml = cover('LP Học tập', 'Truy bài đầu giờ (15 phút)', role.bg, true);
+    mainHtml = await renderHocTap();
+  } else if(state.tab === 'laodong'){
+    coverHtml = cover('LP Lao động', 'Phân công & kiểm tra trực nhật', role.bg, true);
+    mainHtml = await renderLaoDong();
+  } else if(state.tab === 'kyluat'){
+    coverHtml = cover('LP Kỷ luật', 'Điểm nền nếp · Khen · Nhắc nhở', role.bg, false);
+    mainHtml = await renderKyLuat();
+  }
+  app.innerHTML = coverHtml + mainHtml + tabbar();
+  attachHandlers();
+}
+
+// override render() to always go through async path once loaded
+function render(){
+  if(state.loading){
+    document.getElementById('app').innerHTML = '<div style="padding:40px;text-align:center;color:#5B6580;">Đang tải…</div>';
+    return;
+  }
+  renderAsync();
+}
+
+init();
+</script>
+</body>
+</html>
