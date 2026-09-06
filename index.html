@@ -891,7 +891,11 @@ async function renderKyLuat(subHtml){
   const isKhac = disciplineForm.category === 'Khác';
   const color = ROLE_META.kyluat.color;
 
-  const monthRows = students.map(s=>{
+  const monthRows = [...students].sort((a,b)=>{
+    const aa = agg[a.id]||{cong:0,gay:0}, bb = agg[b.id]||{cong:0,gay:0};
+    if(bb.cong !== aa.cong) return bb.cong - aa.cong; // nhiều điểm cộng hơn lên trên
+    return aa.gay - bb.gay; // ít gậy hơn lên trên
+  }).map(s=>{
     const a = agg[s.id] || {cong:0, gay:0};
     const tier = gayTier(a.gay);
     const badges = quyenLoiTier(a.cong);
