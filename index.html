@@ -2,264 +2,488 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Lớp 10B1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#F0EAE2;
-  --surf:#FFFFFF;
-  --surf2:#EDE6DC;
-  --border:rgba(140,100,65,0.12);
-  --text:#2A1F14;
-  --muted:#8C7B70;
-  --accent:#9B6E45;
-  --ok:#5C8F6A;
-  --warn:#B8892E;
-  --bad:#B85555;
-  --teal:#5C8F6A;
-  --red:#B85555;
-  --amber:#B8892E;
-  --info:#8C7B70;
-  --role-color:var(--accent);
-  --radius:16px;
-  --shadow:0 4px 18px rgba(80,50,25,0.10);
-  --shadow-sm:0 2px 8px rgba(80,50,25,0.08);
+/* ── TOKENS ─────────────────────────────────────────────────── */
+:root {
+  --bg:       #EDE7DD;
+  --surf:     #F8F3ED;
+  --surf2:    #E5DDD3;
+  --border:   rgba(100,65,30,.14);
+  --text:     #27190E;
+  --muted:    #7A6655;
+  --accent:   #8B5E34;
+  --ok:       #3D7A5A;
+  --warn:     #9A7620;
+  --bad:      #A83232;
+  --info:     #426C8C;
+  --ok-bg:    rgba(61,122,90,.10);
+  --warn-bg:  rgba(154,118,32,.10);
+  --bad-bg:   rgba(168,50,50,.10);
+  --radius:   14px;
+  --radius-sm:8px;
+  --sh:       0 2px 12px rgba(60,30,10,.09);
+  --sh-md:    0 4px 20px rgba(60,30,10,.12);
+  --role-color: var(--accent);
+  --font: 'Be Vietnam Pro', system-ui, sans-serif;
 }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{
-  margin:0;
-  font-family:'Be Vietnam Pro',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:     #1A1208;
+    --surf:   #261A0E;
+    --surf2:  #30200F;
+    --border: rgba(180,130,70,.16);
+    --text:   #EEE2D0;
+    --muted:  #9A8268;
+    --accent: #C48A52;
+    --ok:     #5DAA7C;
+    --warn:   #C49A30;
+    --bad:    #D15555;
+    --info:   #5B9CC8;
+    --ok-bg:  rgba(93,170,124,.12);
+    --warn-bg:rgba(196,154,48,.12);
+    --bad-bg: rgba(209,85,85,.12);
+    --sh:     0 2px 12px rgba(0,0,0,.3);
+    --sh-md:  0 4px 20px rgba(0,0,0,.4);
+  }
 }
-.app{max-width:480px;margin:0 auto;padding-bottom:92px;min-height:100vh;}
+:root[data-theme="dark"] {
+  --bg:     #1A1208;
+  --surf:   #261A0E;
+  --surf2:  #30200F;
+  --border: rgba(180,130,70,.16);
+  --text:   #EEE2D0;
+  --muted:  #9A8268;
+  --accent: #C48A52;
+  --ok:     #5DAA7C;
+  --warn:   #C49A30;
+  --bad:    #D15555;
+  --info:   #5B9CC8;
+  --ok-bg:  rgba(93,170,124,.12);
+  --warn-bg:rgba(196,154,48,.12);
+  --bad-bg: rgba(209,85,85,.12);
+  --sh:     0 2px 12px rgba(0,0,0,.3);
+  --sh-md:  0 4px 20px rgba(0,0,0,.4);
+}
 
-/* COVER */
-.cover{
-  padding:54px 20px 24px;
-  position:relative;overflow:hidden;
-  background:var(--surf);
+/* ── RESET ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  margin:0; font-family:var(--font);
+  background:var(--bg); color:var(--text);
+  min-height:100vh; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
 }
-.cover-blob{
-  position:absolute;top:-40px;right:-40px;width:160px;height:160px;
-  border-radius:50%;
-  background:var(--role-color);
-  opacity:.13;pointer-events:none;filter:blur(2px);
-}
-.cover-blob2{
-  position:absolute;bottom:-30px;left:20px;width:90px;height:90px;
-  border-radius:50%;
-  background:var(--role-color);
-  opacity:.07;pointer-events:none;filter:blur(1px);
-}
-.cover .eyebrow{font-size:10px;letter-spacing:.13em;font-weight:700;color:var(--accent);text-transform:uppercase;margin:0 0 8px;}
-.cover h1{margin:0;font-size:26px;font-weight:800;line-height:1.2;color:var(--text);}
-.cover .sub{margin:5px 0 0;font-size:13px;color:var(--muted);}
+input, button, select, textarea { font-family:var(--font); }
+a { color:var(--accent); }
 
-/* DATE BAR */
-.datebar{
-  display:flex;align-items:center;gap:8px;
-  padding:10px 16px;background:var(--surf);
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+#app { max-width:480px; margin:0 auto; padding-bottom:90px; min-height:100vh; }
+main { padding:0 14px 16px; }
+
+/* ── HEADER / COVER ─────────────────────────────────────────── */
+.cover {
+  padding:48px 18px 18px; position:relative;
+  background:var(--surf); overflow:hidden;
   border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);
 }
-.datebar input[type=date]{
-  font-family:'DM Sans',inherit;font-size:13px;border:1px solid var(--border);
-  background:var(--surf2);border-radius:12px;padding:7px 10px;color:var(--text);flex:1;
+.cover::after {
+  content:''; position:absolute; top:-60px; right:-50px;
+  width:160px; height:160px; border-radius:50%;
+  background:var(--role-color); opacity:.10; pointer-events:none;
 }
-.datebar input[type=date]::-webkit-calendar-picker-indicator{opacity:.5;}
-.datebar .today-btn{
-  font-size:12px;font-family:inherit;font-weight:600;
-  background:var(--surf2);border:1px solid var(--border);
-  border-radius:12px;padding:7px 12px;color:var(--muted);white-space:nowrap;cursor:pointer;
+.cover .eyebrow {
+  font-size:10px; letter-spacing:.14em; font-weight:700;
+  color:var(--accent); text-transform:uppercase; margin:0 0 6px;
+  display:flex; align-items:center; gap:6px;
+}
+.cover h1 { margin:0; font-size:24px; font-weight:800; line-height:1.2; }
+.cover .sub { margin:4px 0 0; font-size:12px; color:var(--muted); }
+
+/* ── CONN DOT ───────────────────────────────────────────────── */
+.conn-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--muted); display:inline-block; flex-shrink:0;
+  transition:background .3s;
+}
+.conn-dot.ok  { background:var(--ok); }
+.conn-dot.bad { background:var(--bad); }
+.conn-dot.spin { animation:pulse 1s infinite; background:var(--warn); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── DATE BAR ───────────────────────────────────────────────── */
+.datebar {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px; background:var(--surf);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:20; backdrop-filter:blur(12px);
+}
+.datebar input[type=date], .datebar input[type=month] {
+  flex:1; font-family:var(--font); font-size:13px; font-weight:500;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:7px 10px; background:var(--surf2); color:var(--text);
+  min-width:0;
+}
+.datebar input[type=date]::-webkit-calendar-picker-indicator,
+.datebar input[type=month]::-webkit-calendar-picker-indicator { opacity:.5; }
+.today-btn {
+  font-size:12px; font-weight:600; white-space:nowrap;
+  background:var(--surf2); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:7px 11px; color:var(--muted);
+  cursor:pointer;
 }
 
-/* MAIN */
-main{padding:16px 16px 8px;}
-h2.section{font-size:11px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;}
-h2.section input[type=month]{font-family:inherit;font-size:12px;border:1px solid var(--border);border-radius:10px;padding:4px 8px;background:var(--surf2);color:var(--text);margin-left:8px;letter-spacing:0;}
+/* ── SECTION LABELS ─────────────────────────────────────────── */
+h2.sec {
+  font-size:10px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+  margin:20px 0 8px; display:flex; align-items:center; gap:8px;
+}
+h2.sec input[type=month] {
+  font-family:var(--font); font-size:11px; letter-spacing:0;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:3px 7px; background:var(--surf2); color:var(--text);
+}
 
-/* CARD */
-.card{background:var(--surf);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
+/* ── CARDS ──────────────────────────────────────────────────── */
+.card {
+  background:var(--surf); border-radius:var(--radius);
+  padding:14px; margin-bottom:10px; box-shadow:var(--sh);
+  border:1px solid var(--border);
+}
+.card + .card { }
 
-/* ROW */
-.row{display:flex;align-items:center;gap:10px;padding:11px 0;flex-wrap:wrap;}
-.row+.row{border-top:1px solid var(--border);}
-.name{flex:1;font-size:14px;font-weight:500;}
-.name.full-w{flex-basis:100%;}
-.idx{width:22px;font-size:11px;color:var(--muted);font-weight:600;text-align:right;}
+/* ── ROWS ───────────────────────────────────────────────────── */
+.row {
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  flex-wrap:wrap;
+}
+.row + .row { border-top:1px solid var(--border); }
+.idx { width:20px; font-size:11px; color:var(--muted); font-weight:700; text-align:right; flex-shrink:0; }
+.name { flex:1; font-size:14px; font-weight:500; min-width:0; }
+.name.full-w { flex-basis:100%; }
 
-/* SEGMENTED */
-.seg{display:flex;background:var(--surf2);border-radius:12px;overflow:hidden;border:1px solid var(--border);}
-.seg button{border:none;background:none;padding:8px 10px;font-size:12px;font-family:inherit;font-weight:600;color:var(--muted);cursor:pointer;flex:1;transition:background .15s,color .15s;white-space:nowrap;}
-.seg button+button{border-left:1px solid var(--border);}
-.seg button.on-ok{background:var(--ok);color:#fff;}
-.seg button.on-warn{background:var(--warn);color:#fff;}
-.seg button.on-bad{background:var(--bad);color:#fff;}
-.seg button.on-info{background:var(--surf);color:var(--muted);}
-.seg.seg4{width:100%;}
-.seg.seg4 button{font-size:11px;padding:8px 4px;}
+/* ── STAT PILLS ─────────────────────────────────────────────── */
+.stat-strip { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.pill {
+  background:var(--surf); border-radius:999px; padding:5px 13px;
+  font-size:12px; color:var(--muted); box-shadow:var(--sh);
+  border:1px solid var(--border);
+}
+.pill b { color:var(--text); font-weight:700; }
 
-/* INPUTS */
-.note-input{width:100%;margin-top:6px;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surf2);color:var(--text);}
-.note-input::placeholder{color:var(--muted);}
-textarea.note-input{resize:vertical;}
+/* ── SEGMENTED CONTROL ──────────────────────────────────────── */
+.seg {
+  display:flex; background:var(--surf2); border-radius:var(--radius-sm);
+  overflow:hidden; border:1px solid var(--border);
+}
+.seg button {
+  flex:1; border:none; background:none; padding:8px 9px;
+  font-size:12px; font-family:var(--font); font-weight:600;
+  color:var(--muted); cursor:pointer; transition:background .12s,color .12s;
+  white-space:nowrap;
+}
+.seg button + button { border-left:1px solid var(--border); }
+.seg button.on-ok   { background:var(--ok);   color:#fff; }
+.seg button.on-warn { background:var(--warn);  color:#fff; }
+.seg button.on-bad  { background:var(--bad);   color:#fff; }
+.seg button.on-info { background:var(--info);  color:#fff; }
+.seg.seg4 button { font-size:11px; padding:8px 4px; }
 
-/* PILLS */
-.stat-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
-.pill{background:var(--surf);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--muted);box-shadow:var(--shadow-sm);}
-.pill b{color:var(--text);}
+/* ── INPUTS ─────────────────────────────────────────────────── */
+.field-input, .note-input, select.sel {
+  width:100%; font-family:var(--font); font-size:13px; font-weight:500;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:10px 12px; background:var(--surf2); color:var(--text);
+  margin-top:0; -webkit-appearance:none;
+}
+.field-input::placeholder, .note-input::placeholder { color:var(--muted); font-weight:400; }
+textarea.note-input { resize:vertical; min-height:64px; }
+label.lbl {
+  display:block; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin:12px 0 5px;
+}
+label.lbl:first-child { margin-top:0; }
 
-/* COUNTER */
-.counter-card{display:flex;align-items:center;justify-content:space-between;}
-.counter-num{font-size:48px;font-weight:800;line-height:1;letter-spacing:-.03em;}
-.counter-num.ok{color:var(--ok);}
-.counter-btns{display:flex;gap:8px;}
-.counter-btns button{width:46px;height:46px;border-radius:50%;border:none;background:var(--surf2);font-size:20px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);}
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn-primary, .btn-ghost, .btn-add {
+  width:100%; padding:13px; border-radius:var(--radius); border:none;
+  font-family:var(--font); font-weight:700; font-size:14px;
+  margin-top:10px; cursor:pointer; transition:opacity .15s, transform .1s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-primary:active, .btn-ghost:active, .btn-add:active { transform:scale(.98); }
+.btn-primary { background:var(--role-color); color:#fff; }
+.btn-ghost { background:var(--surf2); color:var(--muted); border:1.5px dashed var(--border); margin-top:8px; }
+.btn-add { background:var(--surf2); color:var(--muted); border:1.5px dashed var(--border); margin-top:6px; padding:11px; }
+.btn-primary.saving { opacity:.65; pointer-events:none; }
 
-/* CHECK ROW */
-.check-row{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;cursor:pointer;}
-.check-row input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;}
+/* ── SAVE BANNER ─────────────────────────────────────────────── */
+.save-banner {
+  position:sticky; bottom:90px; left:0; right:0; z-index:25;
+  margin:8px 14px 0;
+  background:var(--warn); color:#fff; border-radius:var(--radius-sm);
+  padding:9px 14px; font-size:12px; font-weight:600;
+  display:flex; align-items:center; gap:8px; justify-content:space-between;
+  box-shadow:var(--sh-md); transform:translateY(0);
+  transition:transform .2s, opacity .2s;
+}
+.save-banner.hidden { transform:translateY(8px); opacity:0; pointer-events:none; }
+.save-banner button {
+  border:none; background:rgba(255,255,255,.2); border-radius:var(--radius-sm);
+  color:#fff; font-family:var(--font); font-weight:700; font-size:12px;
+  padding:5px 12px; cursor:pointer;
+}
 
-/* TABBAR */
-.tabbar{
-  position:fixed;bottom:0;left:0;right:0;display:flex;
-  background:var(--surf);
+/* ── TABBAR ──────────────────────────────────────────────────── */
+.tabbar {
+  position:fixed; bottom:0; left:0; right:0;
+  display:flex; background:var(--surf);
   border-top:1px solid var(--border);
-  box-shadow:0 -4px 24px rgba(90,55,35,0.08);
-  backdrop-filter:blur(20px);max-width:480px;margin:0 auto;
+  box-shadow:0 -3px 20px rgba(60,30,10,.10);
+  max-width:480px; margin:0 auto;
   padding-bottom:env(safe-area-inset-bottom,0);
+  backdrop-filter:blur(20px);
 }
-.tabbar button{flex:1;border:none;background:none;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:inherit;color:var(--muted);font-size:9px;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:color .15s;}
-.tabbar button .ticon{
-  font-size:18px;line-height:1;width:36px;height:36px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:transparent;transition:background .2s,transform .15s;
+.tabbar button {
+  flex:1; border:none; background:none;
+  padding:9px 4px 7px; display:flex; flex-direction:column;
+  align-items:center; gap:3px; font-family:var(--font);
+  color:var(--muted); font-size:9px; font-weight:700;
+  letter-spacing:.03em; cursor:pointer; transition:color .15s;
 }
-.tabbar button.active .ticon{background:color-mix(in srgb, var(--role-color) 15%, transparent);}
-.tabbar button.active{color:var(--role-color);}
-.tabbar button.active .ticon{transform:scale(1.08);}
+.tabbar button .ti {
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; transition:background .2s, transform .15s;
+}
+.tabbar button.active { color:var(--role-color); }
+.tabbar button.active .ti {
+  background:color-mix(in srgb, var(--role-color) 14%, transparent);
+  transform:scale(1.06);
+}
 
-/* SUBTABS */
-.subtab{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-.subtab button{font-family:inherit;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:999px;border:none;background:var(--surf2);color:var(--muted);cursor:pointer;transition:all .15s;}
-.subtab button.active{background:var(--role-color);color:#fff;}
+/* ── SUBTABS ─────────────────────────────────────────────────── */
+.subtab { display:flex; gap:6px; margin:14px 0 12px; flex-wrap:wrap; }
+.subtab button {
+  font-family:var(--font); font-size:12px; font-weight:700;
+  padding:7px 16px; border-radius:999px; border:none;
+  background:var(--surf2); color:var(--muted); cursor:pointer;
+  transition:all .15s; border:1px solid var(--border);
+}
+.subtab button.active { background:var(--role-color); color:#fff; border-color:transparent; }
 
-/* ROSTER EDIT */
-.roster-edit-row{display:flex;gap:8px;align-items:center;padding:7px 0;}
-.roster-edit-row+.roster-edit-row{border-top:1px solid var(--border);}
-.roster-edit-row input[type=text]{flex:1;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:12px;padding:9px 10px;background:var(--surf2);color:var(--text);}
-.roster-edit-row input[type=text]::placeholder{color:var(--muted);}
-.rm-btn{border:none;background:none;color:var(--bad);font-size:18px;padding:4px 6px;cursor:pointer;}
-.select-to{font-family:inherit;font-size:12px;border:1px solid var(--border);border-radius:10px;padding:7px 8px;background:var(--surf2);color:var(--text);width:74px;flex:none;}
+/* ── ROSTER EDITOR ───────────────────────────────────────────── */
+.redit {
+  display:flex; gap:8px; align-items:center; padding:8px 0;
+}
+.redit + .redit { border-top:1px solid var(--border); }
+.redit input[type=text] {
+  flex:1; font-family:var(--font); font-size:13px; font-weight:500;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:8px 10px; background:var(--surf2); color:var(--text);
+}
+.redit input::placeholder { color:var(--muted); font-weight:400; }
+.sel-to {
+  width:68px; flex:none; font-family:var(--font); font-size:12px;
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:8px 6px; background:var(--surf2); color:var(--text);
+  -webkit-appearance:none;
+}
+.rm-btn {
+  border:none; background:none; color:var(--bad); font-size:17px;
+  padding:4px 5px; cursor:pointer; flex-shrink:0;
+}
 
-/* BUTTONS */
-.add-btn,.primary-btn{width:100%;padding:14px;border-radius:14px;border:none;font-family:inherit;font-weight:700;font-size:14px;margin-top:8px;cursor:pointer;transition:opacity .15s;}
-.add-btn{background:var(--surf2);color:var(--muted);border:1.5px dashed var(--border);}
-.primary-btn{background:var(--role-color);color:#fff;}
+/* ── COUNTER ─────────────────────────────────────────────────── */
+.counter-card { display:flex; align-items:center; justify-content:space-between; }
+.counter-num {
+  font-size:52px; font-weight:800; line-height:1;
+  letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+}
+.counter-num.ok { color:var(--ok); }
+.counter-btns { display:flex; gap:8px; }
+.counter-btns button {
+  width:44px; height:44px; border-radius:50%; border:none;
+  background:var(--surf2); font-size:20px; color:var(--text);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--sh); border:1px solid var(--border);
+}
 
-/* MISC */
-.empty{text-align:center;color:var(--muted);font-size:13px;padding:28px 8px;}
-.badge-flag{display:inline-block;margin-top:6px;font-size:11px;font-weight:700;background:rgba(192,96,96,.12);color:var(--bad);border-radius:8px;padding:3px 10px;}
-.week-name{font-weight:600;font-size:14px;}
-.week-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.bar-wrap{background:var(--surf2);border-radius:4px;height:4px;margin-top:8px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;}
-.week-card{background:var(--surf);border-radius:var(--radius);padding:14px;margin-bottom:8px;box-shadow:var(--shadow-sm);}
+/* ── CHECK ROW ───────────────────────────────────────────────── */
+.check-row {
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  font-size:14px; cursor:pointer;
+}
+.check-row input[type=checkbox] { width:20px; height:20px; accent-color:var(--accent); flex-shrink:0; }
 
-/* DISCIPLINE */
-.disc-entry{padding:10px 0;border-top:1px solid var(--border);font-size:13px;}
-.disc-entry:first-child{border-top:none;}
-.disc-pts{font-weight:700;font-size:15px;white-space:nowrap;}
-.disc-pts.pos{color:var(--ok);}
-.disc-pts.neg{color:var(--bad);}
-.disc-summary{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
-.score-block{text-align:center;}
-.score-block .score-num{font-size:34px;font-weight:800;line-height:1;}
-.score-block .score-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+/* ── WEEK CARD ───────────────────────────────────────────────── */
+.wcard {
+  background:var(--surf); border-radius:var(--radius-sm);
+  padding:12px 14px; margin-bottom:8px;
+  border:1px solid var(--border); box-shadow:var(--sh);
+}
+.wcard-title { font-size:14px; font-weight:700; }
+.wcard-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+.bar-wrap { background:var(--surf2); border-radius:4px; height:4px; margin-top:8px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:4px; }
+.flag { display:inline-block; margin-top:6px; font-size:11px; font-weight:700; background:var(--bad-bg); color:var(--bad); border-radius:6px; padding:3px 9px; }
 
-/* SELECT */
-select,.sel{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:12px;padding:9px 10px;background:var(--surf2);color:var(--text);width:100%;-webkit-appearance:none;}
-label.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin:12px 0 4px;}
+/* ── DISCIPLINE ──────────────────────────────────────────────── */
+.dentry { padding:10px 0; border-top:1px solid var(--border); font-size:13px; }
+.dentry:first-child { border-top:none; }
+.dentry-row { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+.dpts { font-weight:800; font-size:15px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.dpts.pos { color:var(--ok); }
+.dpts.neg { color:var(--bad); }
+.score-block { text-align:center; }
+.score-num { font-size:30px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+.score-lbl { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-top:2px; }
 
-/* LOCK */
-.lock-screen{margin:40px 0;text-align:center;padding:0 8px;}
-.lock-screen .lock-icon{font-size:48px;margin-bottom:14px;}
-.lock-screen h3{font-size:20px;font-weight:800;margin:0 0 6px;}
-.lock-screen p{color:var(--muted);font-size:13px;margin:0 0 20px;}
-.lock-screen input{width:100%;font-family:inherit;font-size:15px;font-weight:600;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:13px;color:var(--text);text-align:center;letter-spacing:.2em;margin-bottom:10px;box-shadow:var(--shadow-sm);}
-.lock-screen input::placeholder{color:var(--muted);letter-spacing:.02em;font-weight:400;font-size:13px;}
-#loginError{color:var(--bad);font-size:12px;margin-top:4px;}
+/* ── LOCK SCREEN ─────────────────────────────────────────────── */
+.lock { margin:40px 0; text-align:center; padding:0 8px; }
+.lock-icon { font-size:44px; margin-bottom:12px; }
+.lock h3 { font-size:20px; font-weight:800; margin:0 0 5px; }
+.lock p { color:var(--muted); font-size:13px; margin:0 0 18px; }
+.lock input {
+  width:100%; font-family:var(--font); font-size:15px; font-weight:700;
+  background:var(--surf); border:1px solid var(--border); border-radius:var(--radius);
+  padding:13px; color:var(--text); text-align:center; letter-spacing:.18em;
+  margin-bottom:8px; box-shadow:var(--sh);
+}
+.lock input::placeholder { color:var(--muted); letter-spacing:.02em; font-weight:400; font-size:13px; }
+.lock-err { color:var(--bad); font-size:12px; margin-top:4px; min-height:18px; }
 
-/* TOAST */
-.toast{position:fixed;bottom:104px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:100;white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* ── LOGIN SPLASH ────────────────────────────────────────────── */
+.splash {
+  min-height:100vh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:40px 20px; background:var(--bg);
+  position:relative; overflow:hidden;
+}
+.splash::before {
+  content:''; position:absolute; top:-80px; right:-60px;
+  width:280px; height:280px; border-radius:50%;
+  background:var(--accent); opacity:.07; pointer-events:none;
+}
+.splash::after {
+  content:''; position:absolute; bottom:-60px; left:-40px;
+  width:200px; height:200px; border-radius:50%;
+  background:var(--ok); opacity:.06; pointer-events:none;
+}
+.splash .brand { font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.splash h1 { font-size:26px; font-weight:800; margin:0 0 4px; }
+.splash .tagline { color:var(--muted); font-size:13px; margin:0 0 28px; text-align:center; }
+.role-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:340px; margin-bottom:12px; }
+.role-card {
+  background:var(--surf); border-radius:16px; padding:16px 12px;
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  cursor:pointer; transition:transform .15s, box-shadow .15s;
+  box-shadow:var(--sh); border:1px solid var(--border);
+}
+.role-card:active { transform:scale(.96); }
+.role-card .rc-icon { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:21px; background:var(--surf2); }
+.role-card .rc-lbl { font-size:12px; font-weight:700; text-align:center; }
+.role-card.selected { box-shadow:0 0 0 2.5px var(--sel-c, var(--accent)), var(--sh); }
+.pass-box {
+  width:100%; max-width:340px; background:var(--surf);
+  border-radius:16px; padding:18px; margin-bottom:12px;
+  box-shadow:var(--sh-md); border:1px solid var(--border);
+  animation:slideUp .16s ease;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.pass-box .pb-title { font-size:14px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+.pass-box input {
+  width:100%; font-family:var(--font); font-size:15px; font-weight:700;
+  background:var(--surf2); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:11px; color:var(--text); text-align:center; letter-spacing:.18em; margin-bottom:8px;
+}
+.pass-box input::placeholder { color:var(--muted); letter-spacing:.02em; font-weight:400; font-size:13px; }
+.pass-box .pb-err { color:var(--bad); font-size:12px; margin-bottom:8px; min-height:16px; }
+.pass-box .pb-submit {
+  width:100%; padding:12px; border-radius:var(--radius-sm); border:none;
+  font-family:var(--font); font-weight:700; font-size:14px; cursor:pointer; transition:opacity .15s;
+}
 
-.loading-screen{display:flex;align-items:center;justify-content:center;height:100vh;color:var(--muted);font-size:14px;}
+/* ── TOAST ───────────────────────────────────────────────────── */
+.toast {
+  position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(6px);
+  background:var(--text); color:var(--bg); padding:9px 18px; border-radius:999px;
+  font-size:13px; font-weight:600; opacity:0; pointer-events:none;
+  transition:opacity .2s, transform .2s; z-index:200; white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* LOGIN SPLASH */
-.login-splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px 40px;background:var(--bg);position:relative;overflow:hidden;}
-.splash-blob{position:absolute;top:-80px;right:-60px;width:260px;height:260px;border-radius:50%;background:var(--accent);opacity:.09;pointer-events:none;filter:blur(4px);}
-.splash-blob2{position:absolute;bottom:-60px;left:-40px;width:200px;height:200px;border-radius:50%;background:var(--ok);opacity:.07;pointer-events:none;filter:blur(4px);}
-.login-splash .brand{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
-.login-splash h1{font-size:28px;font-weight:800;margin:0 0 4px;color:var(--text);}
-.login-splash .tagline{color:var(--muted);font-size:13px;margin:0 0 32px;text-align:center;}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:340px;margin-bottom:12px;}
-.role-card{background:var(--surf);border-radius:18px;padding:18px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow-sm);-webkit-tap-highlight-color:transparent;}
-.role-card:active{transform:scale(.97);}
-.role-card .rc-icon-wrap{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, var(--sel-color,var(--accent)) 14%, var(--surf2));font-size:22px;transition:background .15s;}
-.role-card .rc-label{font-size:12px;font-weight:600;text-align:center;}
-.role-card.selected{box-shadow:0 0 0 2px var(--sel-color,var(--accent)), var(--shadow-sm);}
-.role-card.selected .rc-icon-wrap{background:color-mix(in srgb, var(--sel-color,var(--accent)) 22%, var(--surf2));}
-.viewer-btn{width:100%;max-width:340px;padding:13px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;}
-.login-pass-box{width:100%;max-width:340px;background:var(--surf);border-radius:18px;padding:20px 18px;margin-bottom:14px;animation:slideUp .18s ease;box-shadow:var(--shadow);}
-@keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-.login-pass-box .lp-title{font-size:14px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
-.login-pass-box input{width:100%;font-family:inherit;font-size:15px;font-weight:600;background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--text);text-align:center;letter-spacing:.2em;margin-bottom:10px;}
-.login-pass-box input::placeholder{color:var(--muted);letter-spacing:.02em;font-weight:400;font-size:13px;}
-.login-pass-box .lp-err{color:var(--bad);font-size:12px;margin-bottom:8px;min-height:18px;}
-.login-pass-box .lp-submit{width:100%;padding:13px;border-radius:12px;border:none;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;}
-
+/* ── MISC ────────────────────────────────────────────────────── */
+.empty { text-align:center; color:var(--muted); font-size:13px; padding:24px 8px; }
+.badge { display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:3px 9px; }
+.badge-ok   { background:var(--ok-bg);   color:var(--ok); }
+.badge-warn { background:var(--warn-bg); color:var(--warn); }
+.badge-bad  { background:var(--bad-bg);  color:var(--bad); }
+.loading-screen { display:flex; align-items:center; justify-content:center; height:100vh; color:var(--muted); gap:10px; flex-direction:column; }
+.loading-screen .spin-icon { font-size:28px; animation:spin 1s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
 </style>
 </head>
 <body>
-<div class="app" id="app"></div>
+<div id="app"></div>
 <div class="toast" id="toast"></div>
 
 <script>
-const ROLE_META = {
-  public:{label:'Báo cáo', short:'Báo cáo', icon:'📊', color:'#A07850'},
-  home:{label:'Danh sách lớp', short:'Lớp', icon:'👥', color:'#A07850'},
-  lt:{label:'Lớp trưởng', short:'LT', icon:'⭐', color:'#C07878'},
-  hoctap:{label:'LP Học tập', short:'Học tập', icon:'📚', color:'#5B8EA6'},
-  laodong:{label:'LP Lao động', short:'Lao động', icon:'🧹', color:'#6A9E7A'},
-  kyluat:{label:'Kỷ luật', short:'Kỷ luật', icon:'🥢', color:'#C19A3E'},
-  gvcn:{label:'GVCN', short:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
-};
-// Tabs visible in viewer (no-login) mode
-const PUBLIC_TABS = ['public'];
-const ROLE_LOGIN_KEY = { lt:'lop-truong', hoctap:'hoc-tap', laodong:'lao-dong', gvcn:'gvcn' };
+// ═══════════════ CẤU HÌNH ════════════════════════════════════
+const API_URL   = 'https://script.google.com/macros/s/AKfycbykQfvYnE7ERzNQqz6kQI01ZjDSgjZAZvrVaTxDStSzvSy2lQFSppveNRxHtltP8oTKKQ/exec';
+const API_TOKEN = 'Lop10b1@2026';
 
+// Passcodes dùng để verify local (đồng bộ với GAS)
+const PASSCODES = {
+  'lop-truong': '10b1truong',
+  'hoc-tap':    '10b1phohoctap',
+  'lao-dong':   '10b1pholaodong',
+  'to-1':       '10b1to1',
+  'to-2':       '10b1to2',
+  'to-3':       '10b1to3',
+  'gvcn':       '10b1chunhiem',
+};
+// ═════════════════════════════════════════════════════════════
+
+const ROLE_META = {
+  public:  {label:'Báo cáo',        short:'Báo cáo',  icon:'📊', color:'#8B6A3E'},
+  home:    {label:'Danh sách lớp',  short:'Lớp',      icon:'👥', color:'#8B6A3E'},
+  lt:      {label:'Lớp trưởng',     short:'LT',       icon:'⭐', color:'#A85050'},
+  hoctap:  {label:'LP Học tập',     short:'Học tập',  icon:'📚', color:'#3D7A9A'},
+  laodong: {label:'LP Lao động',    short:'Lao động', icon:'🧹', color:'#3D7A5A'},
+  kyluat:  {label:'Kỷ luật',        short:'Kỷ luật',  icon:'🥢', color:'#9A7620'},
+  gvcn:    {label:'GVCN',           short:'GVCN',     icon:'👩‍🏫', color:'#7A5A9A'},
+};
+const PUBLIC_TABS = ['public'];
+const LOGIN_ROLES = [
+  {key:'lop-truong', tab:'lt',      label:'Lớp trưởng',  icon:'⭐', color:'#A85050'},
+  {key:'hoc-tap',    tab:'hoctap',  label:'LP Học tập',  icon:'📚', color:'#3D7A9A'},
+  {key:'lao-dong',   tab:'laodong', label:'LP Lao động', icon:'🧹', color:'#3D7A5A'},
+  {key:'to-1',       tab:'kyluat',  label:'Tổ trưởng 1', icon:'1️⃣', color:'#9A7620'},
+  {key:'to-2',       tab:'kyluat',  label:'Tổ trưởng 2', icon:'2️⃣', color:'#9A7620'},
+  {key:'to-3',       tab:'kyluat',  label:'Tổ trưởng 3', icon:'3️⃣', color:'#9A7620'},
+  {key:'gvcn',       tab:'home',    label:'GVCN',         icon:'👩‍🏫', color:'#7A5A9A'},
+];
 const CONG_CATEGORIES = [
   {label:'Thực hiện tốt vai trò trong ban cán sự lớp', pts:10},
   {label:'Được nhà trường tuyên dương', pts:15},
-  {label:'Đạt giải đội tuyển / phong trào (TDTT, văn nghệ, cuộc thi, HSG)', pts:10},
+  {label:'Đạt giải đội tuyển / phong trào', pts:10},
   {label:'Tham gia tích cực đội tuyển / phong trào', pts:5},
   {label:'Đến cổ vũ đội tuyển / phong trào', pts:2},
   {label:'Được khen / điểm tốt trong sổ đầu bài', pts:5},
   {label:'Được khen bởi GVBM', pts:5},
-  {label:'Đến sớm 15 phút trong hoạt động ngoài giờ học', pts:2},
+  {label:'Đến sớm 15 phút trong hoạt động ngoài giờ', pts:2},
   {label:'Có tiến bộ rõ rệt', pts:5},
   {label:'Giúp đỡ lớp, thầy cô, bạn bè', pts:5},
   {label:'Hỗ trợ vệ sinh của lớp', pts:2},
 ];
 const VIPHAM_CATEGORIES = [
-  {label:'Bạo lực học đường (ngôn từ, thể chất, tinh thần)', gay:3},
+  {label:'Bạo lực học đường', gay:3},
   {label:'Bè phái, chia rẽ tập thể', gay:3},
   {label:'Vô lễ với thầy cô, nhân viên nhà trường', gay:3},
   {label:'Dùng điện thoại sai quy định', gay:3},
@@ -270,875 +494,902 @@ const VIPHAM_CATEGORIES = [
   {label:'Nói tục, chửi bậy, hành xử thiếu văn hoá', gay:1},
   {label:'Đổi chỗ tự do', gay:1},
   {label:'Bị ghi sổ đầu bài', gay:1},
-  {label:'Vi phạm bị ghi tên trong sổ đầu bài', gay:1},
   {label:'Sai quy định về đầu tóc, trang phục', gay:1},
   {label:'Mang đồ ăn vào lớp', gay:1},
   {label:'Để lại rác trong lớp', gay:1},
-  {label:'Đến muộn hoạt động ngoại khoá (không phép, ảnh hưởng chương trình)', gay:1},
+  {label:'Đến muộn hoạt động ngoại khoá', gay:1},
 ];
 const ASSIGNMENT_FIELDS = [
-  {key:'lop_truong', title:'Lớp trưởng', desc:'Điều hành sinh hoạt đầu giờ, điểm danh, quản lý hòm điện thoại, đầu mối với GVCN.'},
-  {key:'lp_hoc_tap', title:'Lớp phó học tập', desc:'Theo dõi BTVN, sổ đầu bài, nhắc bài tập, liên lạc GV bộ môn.'},
-  {key:'lp_lao_dong', title:'Lớp phó lao động', desc:'Phân công & kiểm tra trực nhật, quản lý cơ sở vật chất lớp.'},
-  {key:'lp_van_the_my', title:'Lớp phó văn thể mỹ', desc:'Phụ trách hoạt động văn nghệ, thể thao, phong trào, trang trí lớp.'},
-  {key:'lp_doi_ngoai', title:'Lớp phó đối ngoại', desc:'Đầu mối liên lạc, đối ngoại của lớp với các bên liên quan.'},
-  {key:'bi_thu', title:'Bí thư', desc:'Phụ trách công tác Đoàn, sinh hoạt Đoàn định kỳ.'},
-  {key:'to_truong_1', title:'Tổ trưởng Tổ 1', desc:'Theo dõi nền nếp, ghi nhận điểm cộng/vi phạm cho các bạn Tổ 1.'},
-  {key:'to_truong_2', title:'Tổ trưởng Tổ 2', desc:'Theo dõi nền nếp, ghi nhận điểm cộng/vi phạm cho các bạn Tổ 2.'},
-  {key:'to_truong_3', title:'Tổ trưởng Tổ 3', desc:'Theo dõi nền nếp, ghi nhận điểm cộng/vi phạm cho các bạn Tổ 3.'},
+  {key:'lop_truong',      title:'Lớp trưởng',          desc:'Điều hành, điểm danh, hòm điện thoại.'},
+  {key:'lp_hoc_tap',      title:'LP Học tập',           desc:'Theo dõi BTVN, sổ đầu bài.'},
+  {key:'lp_lao_dong',     title:'LP Lao động',          desc:'Phân công & kiểm tra trực nhật.'},
+  {key:'lp_van_the_my',   title:'LP Văn thể mỹ',        desc:'Văn nghệ, thể thao, phong trào.'},
+  {key:'lp_doi_ngoai',    title:'LP Đối ngoại',         desc:'Liên lạc đối ngoại.'},
+  {key:'bi_thu',          title:'Bí thư',               desc:'Công tác Đoàn.'},
+  {key:'to_truong_1',     title:'Tổ trưởng Tổ 1',      desc:'Theo dõi nền nếp Tổ 1.'},
+  {key:'to_truong_2',     title:'Tổ trưởng Tổ 2',      desc:'Theo dõi nền nếp Tổ 2.'},
+  {key:'to_truong_3',     title:'Tổ trưởng Tổ 3',      desc:'Theo dõi nền nếp Tổ 3.'},
 ];
 
+// ══ STATE ════════════════════════════════════════════════════
 let state = {
-  tab: 'home',
-  date: todayStr(),
-  month: monthStr(todayStr()),
-  roster: null,
-  loading: true,
-  sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
-  unlocked: {},
-  showLogin: true,
-  loginSelectedRole: null,
-  isViewer: false,
+  tab:'home', date:todayStr(), month:monthStr(todayStr()),
+  roster:[], loading:true,
+  sub:{home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
+  unlocked:{}, showLogin:true, loginSelectedRole:null, isViewer:false,
+  connStatus:'loading',   // 'loading' | 'ok' | 'error'
+  pendingKeys:{},         // keys that have unsaved changes (sset queued)
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
-let ldDayData = null, ltData = null, htData = null, ldConfig = null;
+let ltData=null, htData=null, ldDayData=null, ldConfig=null;
+let ltLoadedDate=null, htLoadedDate=null, ldLoadedDate=null, ldConfigLoaded=false;
+let pendingSaveTimer=null;
 
-function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function monthStr(dateStr){ return dateStr.slice(0,7); }
-function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+// ══ HELPERS ══════════════════════════════════════════════════
+function todayStr(){const d=new Date(); return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function monthStr(s){return s.slice(0,7);}
+function p2(n){return String(n).padStart(2,'0');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function fmtDate(s){const[y,m,d]=s.split('-'); return `${d}/${m}/${y}`;}
+function escH(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function showToast(msg, dur=1800){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
   clearTimeout(showToast._h);
-  showToast._h = setTimeout(()=>t.classList.remove('show'), 1600);
+  showToast._h=setTimeout(()=>t.classList.remove('show'),dur);
 }
 
-// ====== CẤU HÌNH KHO DỮ LIỆU ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbykQfvYnE7ERzNQqz6kQI01ZjDSgjZAZvrVaTxDStSzvSy2lQFSppveNRxHtltP8oTKKQ/exec';
-const API_TOKEN = 'Lop10b1@2026';
-// ====================================
+// ══ API LAYER ═════════════════════════════════════════════════
+// Retry helper
+async function fetchWithRetry(url, retries=2){
+  for(let i=0; i<=retries; i++){
+    try{
+      const res = await fetch(url, {method:'GET', mode:'cors'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return await res.json();
+    } catch(e){
+      if(i===retries) throw e;
+      await new Promise(r=>setTimeout(r, 600*(i+1)));
+    }
+  }
+}
 
 async function sget(key){
   try{
-    const url = `${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await fetchWithRetry(`${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`);
     if(data.error) throw new Error(data.error);
-    return data.value ? JSON.parse(data.value) : null;
-  } catch(e){ console.error('sget failed', key, e); return null; }
+    if(state.connStatus !== 'ok'){ state.connStatus='ok'; updateConnDot(); }
+    return data.value != null ? JSON.parse(data.value) : null;
+  } catch(e){
+    console.error('sget failed:', key, e.message);
+    state.connStatus='error'; updateConnDot();
+    return null;
+  }
 }
+
 async function sset(key, value){
+  // Optimistically mark saving
+  const dotEl = document.querySelector('.conn-dot');
+  if(dotEl){ dotEl.classList.add('spin'); }
   try{
     const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await fetchWithRetry(url, 3);
     if(data.error) throw new Error(data.error);
+    if(state.connStatus !== 'ok'){ state.connStatus='ok'; updateConnDot(); }
+    if(dotEl){ dotEl.classList.remove('spin'); }
     return true;
-  } catch(e){ console.error('sset failed', key, e); showToast('Lỗi lưu dữ liệu'); return false; }
-}
-async function doLogin(role, passcode){
-  try{
-    const url = `${API_URL}?action=login&role=${encodeURIComponent(role)}&passcode=${encodeURIComponent(passcode)}&token=${encodeURIComponent(API_TOKEN)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    return !!data.ok;
-  } catch(e){ return false; }
+  } catch(e){
+    console.error('sset failed:', key, e.message);
+    state.connStatus='error'; updateConnDot();
+    if(dotEl){ dotEl.classList.remove('spin'); }
+    showToast('⚠️ Lỗi lưu dữ liệu — kiểm tra kết nối');
+    return false;
+  }
 }
 
-async function loadRoster(){ let r = await sget('roster'); state.roster = Array.isArray(r) ? r : []; }
-async function saveRoster(){ await sset('roster', state.roster); }
+// Local login (compare against known passcodes — same as GAS does)
+function doLogin(role, passcode){
+  return PASSCODES[role] && passcode === PASSCODES[role];
+}
 
+function updateConnDot(){
+  document.querySelectorAll('.conn-dot').forEach(el=>{
+    el.className = 'conn-dot ' + (state.connStatus==='ok'?'ok':state.connStatus==='error'?'bad':'spin');
+  });
+}
+
+// ══ INIT ═════════════════════════════════════════════════════
 async function init(){
-  if(!API_URL || API_URL.indexOf('DÁN_URL') === 0){
-    document.getElementById('app').innerHTML = `
-      <div style="padding:80px 24px;text-align:center;">
-        <div style="font-size:52px;margin-bottom:16px;">🔗</div>
-        <h2 style="margin:0 0 8px;font-size:20px;">Chưa gắn kho dữ liệu</h2>
-        <p style="color:#888;font-size:13px;line-height:1.6;">Tìm dòng <code style="background:#1E1E1E;padding:2px 6px;border-radius:4px;">API_URL</code> trong file và dán URL Apps Script Web App vào.</p>
-      </div>`;
+  state.loading=true; render();
+  const r = await sget('roster');
+  state.roster = Array.isArray(r) ? r : [];
+  state.loading=false; render();
+}
+
+// ══ RENDER ROUTER ════════════════════════════════════════════
+function render(){
+  if(state.loading){
+    document.getElementById('app').innerHTML=`<div class="loading-screen"><span class="spin-icon">⏳</span><span>Đang kết nối…</span></div>`;
     return;
   }
-  await loadRoster();
-  state.loading = false;
-  render();
-}
-
-function toggleTheme(){
-  const root = document.documentElement;
-  const isDark = root.getAttribute('data-theme')==='dark'
-    || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches);
-  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
-}
-
-function render(){
-  if(state.loading){ document.getElementById('app').innerHTML = '<div class="loading-screen">Đang tải…</div>'; return; }
   if(state.showLogin){ renderLoginScreen(); return; }
   renderAsync();
 }
 
-const LOGIN_ROLES = [
-  {key:'lop-truong', tab:'lt', label:'Lớp trưởng', icon:'⭐', color:'#C07878'},
-  {key:'hoc-tap', tab:'hoctap', label:'LP Học tập', icon:'📚', color:'#5B8EA6'},
-  {key:'lao-dong', tab:'laodong', label:'LP Lao động', icon:'🧹', color:'#6A9E7A'},
-  {key:'to-1', tab:'kyluat', label:'Tổ trưởng 1', icon:'1️⃣', color:'#C19A3E'},
-  {key:'to-2', tab:'kyluat', label:'Tổ trưởng 2', icon:'2️⃣', color:'#C19A3E'},
-  {key:'to-3', tab:'kyluat', label:'Tổ trưởng 3', icon:'3️⃣', color:'#C19A3E'},
-  {key:'gvcn', tab:'home', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
-];
-
+// ══ LOGIN SCREEN ══════════════════════════════════════════════
 function renderLoginScreen(){
-  const app = document.getElementById('app');
-  const sel = state.loginSelectedRole;
-  const roleCards = LOGIN_ROLES.map(r=>`
-    <button class="role-card${sel&&sel.key===r.key?' selected':''}" data-login-role="${r.key}" style="--sel-color:${r.color}">
-      <span class="rc-icon-wrap"><span style="font-size:22px;">${r.icon}</span></span>
-      <span class="rc-label">${r.label}</span>
+  const app=document.getElementById('app');
+  const sel=state.loginSelectedRole;
+  const cards = LOGIN_ROLES.map(r=>`
+    <button class="role-card${sel&&sel.key===r.key?' selected':''}" data-lr="${r.key}" style="--sel-c:${r.color}">
+      <span class="rc-icon">${r.icon}</span>
+      <span class="rc-lbl">${r.label}</span>
     </button>`).join('') + `
-    <button class="role-card viewer-card" id="viewerCardBtn" style="--sel-color:#9A8B82">
-      <span class="rc-icon-wrap"><span style="font-size:22px;">👀</span></span>
-      <span class="rc-label">Xem tự do</span>
+    <button class="role-card" id="viewerCard" style="--sel-c:#7A7A7A">
+      <span class="rc-icon">👀</span>
+      <span class="rc-lbl">Xem tự do</span>
     </button>`;
 
   const passBox = sel ? `
-    <div class="login-pass-box" id="loginPassBox">
-      <p class="lp-title"><span>${sel.icon}</span> ${sel.label}</p>
+    <div class="pass-box">
+      <p class="pb-title">${sel.icon} ${sel.label}</p>
       <input type="password" id="splashPass" placeholder="Mật khẩu được cấp…" autocomplete="current-password">
-      <p class="lp-err" id="splashErr"></p>
-      <button class="lp-submit" id="splashSubmit" style="background:${sel.color};color:${['#25F4EE','#25D366','#FFB800'].includes(sel.color)?'#000':'#fff'}">Mở khoá →</button>
+      <p class="pb-err" id="splashErr"></p>
+      <button class="pb-submit" id="splashSubmit" style="background:${sel.color};color:#fff;">Mở khoá →</button>
     </div>` : '';
 
-  app.innerHTML = `
-    <div class="login-splash">
-      <div class="splash-blob"></div>
-      <div class="splash-blob2"></div>
+  app.innerHTML=`
+    <div class="splash">
       <p class="brand">Lớp 10B1 · Marie Curie</p>
       <h1>Xin chào 👋</h1>
       <p class="tagline">Chọn vai trò của bạn để tiếp tục</p>
-      <div class="role-grid">${roleCards}</div>
+      <div class="role-grid">${cards}</div>
       ${passBox}
-      <button class="viewer-btn" id="viewerBtn" style="display:none">Xem không cần đăng nhập</button>
     </div>`;
 
-  // (no theme toggle)
-
-  // Role card click
-  app.querySelectorAll('[data-login-role]').forEach(btn=>{
-    btn.onclick = ()=>{
-      const key = btn.dataset.loginRole;
-      state.loginSelectedRole = LOGIN_ROLES.find(r=>r.key===key) || null;
+  app.querySelectorAll('[data-lr]').forEach(btn=>{
+    btn.onclick=()=>{
+      state.loginSelectedRole = LOGIN_ROLES.find(r=>r.key===btn.dataset.lr)||null;
       renderLoginScreen();
-      setTimeout(()=>{ const p=document.getElementById('splashPass'); if(p) p.focus(); },50);
+      setTimeout(()=>{ const p=document.getElementById('splashPass'); if(p) p.focus(); },40);
     };
   });
 
-  // Submit
-  const submitBtn = document.getElementById('splashSubmit');
-  if(submitBtn) submitBtn.onclick = async ()=>{
-    const pass = document.getElementById('splashPass').value;
-    const errEl = document.getElementById('splashErr');
-    submitBtn.disabled = true; submitBtn.textContent = 'Đang kiểm tra…';
-    const ok = await doLogin(sel.key, pass);
-    submitBtn.disabled = false; submitBtn.textContent = 'Mở khoá →';
+  const sub = document.getElementById('splashSubmit');
+  if(sub) sub.onclick=()=>{
+    const pass=document.getElementById('splashPass').value;
+    const ok=doLogin(sel.key, pass);
     if(ok){
-      state.unlocked[sel.key] = true;
-      // For kyluat tab, also set the right sub-tổ
-      if(sel.tab === 'kyluat'){
-        state.sub.kyluat = sel.key;
-      }
-      state.tab = sel.tab;
-      state.showLogin = false;
-      state.loginSelectedRole = null;
+      state.unlocked[sel.key]=true;
+      if(sel.tab==='kyluat') state.sub.kyluat=sel.key;
+      state.tab=sel.tab; state.showLogin=false; state.loginSelectedRole=null;
       render();
     } else {
-      errEl.textContent = 'Sai mật khẩu, thử lại.';
-      document.getElementById('splashPass').value = '';
+      document.getElementById('splashErr').textContent='Sai mật khẩu, thử lại.';
+      document.getElementById('splashPass').value='';
       document.getElementById('splashPass').focus();
     }
   };
-  // Enter key on password
-  const passInput = document.getElementById('splashPass');
-  if(passInput) passInput.onkeydown = e=>{ if(e.key==='Enter' && submitBtn) submitBtn.click(); };
+  const pin=document.getElementById('splashPass');
+  if(pin) pin.onkeydown=e=>{ if(e.key==='Enter' && sub) sub.click(); };
 
-  // Viewer (no login) — both bottom button (kept for fallback) and grid card
-  const enterViewer = ()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; render(); };
-  const viewerCardBtn = document.getElementById('viewerCardBtn');
-  if(viewerCardBtn) viewerCardBtn.onclick = enterViewer;
-  const viewerBtn = document.getElementById('viewerBtn');
-  if(viewerBtn) viewerBtn.onclick = enterViewer;
+  const vc=document.getElementById('viewerCard');
+  if(vc) vc.onclick=()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; render(); };
 }
 
+// ══ SHARED COMPONENTS ════════════════════════════════════════
 function cover(title, sub, color, showDate){
-  const dateBar = showDate ? `
+  const dot = `<span class="conn-dot ${state.connStatus==='ok'?'ok':state.connStatus==='error'?'bad':'spin'}"></span>`;
+  const datePart = showDate ? `
     <div class="datebar">
       <input type="date" id="dateInput" value="${state.date}">
       <button class="today-btn" data-act="today">Hôm nay</button>
     </div>` : '';
   return `<div class="cover" style="--role-color:${color}">
-    <div class="cover-blob"></div>
-    <div class="cover-blob2"></div>
-    <p class="eyebrow">Sổ quản lý · Lớp 10B1</p>
+    <p class="eyebrow">${dot} Sổ quản lý · Lớp 10B1</p>
     <h1>${title}</h1>
     <p class="sub">${sub}</p>
-  </div>${dateBar}`;
+  </div>${datePart}`;
 }
 
 function tabbar(){
-  const entries = state.isViewer
+  const tabs = state.isViewer
     ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
     : Object.entries(ROLE_META).filter(([k])=>k!=='public');
   const loginBtn = state.isViewer
-    ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
+    ? `<button data-act="go-login" style="flex:none;padding:9px 10px;border:none;background:none;font-family:var(--font);font-size:9px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:.03em;"><span class="ti" style="font-size:17px;">🔑</span>Đăng nhập</button>`
     : '';
-  return `<div class="tabbar">${entries.map(([key,r])=>`
-    <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
-      <span class="ticon">${r.icon}</span>${r.short}
-    </button>
-  `).join('')}${loginBtn}</div>`;
+  return `<nav class="tabbar">${tabs.map(([k,r])=>`
+    <button data-tab="${k}" class="${state.tab===k?'active':''}" style="--role-color:${r.color}">
+      <span class="ti">${r.icon}</span>${r.short}
+    </button>`).join('')}${loginBtn}</nav>`;
 }
 
 function subtabs(group, items){
   const color = ROLE_META[state.tab].color;
-  return `<div class="subtab">${items.map(([key,label])=>
-    `<button data-subtab="${group}:${key}" class="${state.sub[group]===key?'active':''}" style="--role-color:${color}">${label}</button>`
+  return `<div class="subtab">${items.map(([k,lbl])=>
+    `<button data-sub="${group}:${k}" class="${state.sub[group]===k?'active':''}" style="--role-color:${color}">${lbl}</button>`
   ).join('')}</div>`;
 }
 
 function lockBody(label, color, roleKey){
-  return `<div class="lock-screen">
+  return `<div class="lock">
     <div class="lock-icon">🔐</div>
     <h3>${label}</h3>
     <p>Nhập mật khẩu được cấp để mở trang này.</p>
-    <input type="password" id="passcodeInput" placeholder="Mật khẩu…">
-    <button class="primary-btn" style="background:${color};color:#fff;" data-act="do-login" data-role="${roleKey}">Mở khoá →</button>
-    <p id="loginError"></p>
+    <input type="password" id="lockInput" placeholder="Mật khẩu…">
+    <button class="btn-primary" style="background:${color};color:#fff;margin-top:6px;" data-act="do-lock-login" data-role="${roleKey}">Mở khoá →</button>
+    <p class="lock-err" id="lockErr"></p>
   </div>`;
 }
 
 function emptyRoster(){ return '<p class="empty">Chưa có học sinh — vào tab Lớp để nhập danh sách.</p>'; }
-function formatDateVN(ds){ const [y,m,d]=ds.split('-'); return `${d}/${m}/${y}`; }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function escapeAttr(s){ return escapeHtml(s); }
 
+// ══ ASYNC RENDER ══════════════════════════════════════════════
 async function renderAsync(){
-  const app = document.getElementById('app');
-  const role = ROLE_META[state.tab];
-  let coverHtml, mainHtml;
+  const app=document.getElementById('app');
+  const r=ROLE_META[state.tab];
+  let ch='', mh='';
 
-  if(state.tab === 'public'){
-    coverHtml = cover('Báo cáo lớp 10B1', `Xem tự do · ${formatDateVN(state.date)}`, role.color, true);
-    mainHtml = await renderPublic();
-  } else if(state.tab === 'home'){
-    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh · Chỉ GVCN chỉnh sửa được`, role.color, false);
-    mainHtml = await guarded('gvcn', renderHome);
-  } else if(state.tab === 'lt'){
-    coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.color, true);
-    mainHtml = await guarded('lop-truong', renderLT);
-  } else if(state.tab === 'hoctap'){
-    coverHtml = cover('LP Học tập', 'Truy bài đầu giờ 15 phút', role.color, true);
-    mainHtml = await guarded('hoc-tap', renderHocTap);
-  } else if(state.tab === 'laodong'){
-    coverHtml = cover('LP Lao động', 'Phân công & kiểm tra trực nhật', role.color, true);
-    mainHtml = await guarded('lao-dong', renderLaoDong);
-  } else if(state.tab === 'kyluat'){
-    coverHtml = cover('Kỷ luật', 'Điểm nền nếp theo tổ · điểm cộng & gậy 🥢', role.color, true);
-    const subHtml = subtabs('kyluat', [['to-1','Tổ 1'],['to-2','Tổ 2'],['to-3','Tổ 3']]);
+  if(state.tab==='public'){
+    ch=cover('Báo cáo lớp 10B1',`Xem tự do · ${fmtDate(state.date)}`,r.color,true);
+    mh=await renderPublic();
+  } else if(state.tab==='home'){
+    ch=cover('Danh sách lớp',`${state.roster.length} học sinh`,r.color,false);
+    mh=await guarded('gvcn',renderHome,r.color,'gvcn');
+  } else if(state.tab==='lt'){
+    ch=cover('Lớp trưởng','Điểm danh · Thu điện thoại · Hòm',r.color,true);
+    mh=await guarded('lop-truong',renderLT,r.color,'lop-truong');
+  } else if(state.tab==='hoctap'){
+    ch=cover('LP Học tập','Truy bài đầu giờ 15 phút',r.color,true);
+    mh=await guarded('hoc-tap',renderHocTap,r.color,'hoc-tap');
+  } else if(state.tab==='laodong'){
+    ch=cover('LP Lao động','Phân công & kiểm tra trực nhật',r.color,true);
+    mh=await guarded('lao-dong',renderLaoDong,r.color,'lao-dong');
+  } else if(state.tab==='kyluat'){
+    ch=cover('Kỷ luật','Điểm nền nếp · điểm cộng & gậy',r.color,true);
+    const sh=subtabs('kyluat',[['to-1','Tổ 1'],['to-2','Tổ 2'],['to-3','Tổ 3']]);
     if(!state.unlocked[state.sub.kyluat]){
-      mainHtml = `<main>${subHtml}${lockBody('Tổ trưởng Tổ '+state.sub.kyluat.split('-')[1], role.color, state.sub.kyluat)}</main>`;
-    } else {
-      mainHtml = await renderKyLuat(subHtml);
-    }
-  } else if(state.tab === 'gvcn'){
-    coverHtml = cover('GVCN', 'Tổng hợp tình hình lớp', role.color, true);
-    mainHtml = await guarded('gvcn', renderGVCN);
+      mh=`<main>${sh}${lockBody('Tổ trưởng Tổ '+state.sub.kyluat.split('-')[1],r.color,state.sub.kyluat)}</main>`;
+    } else { mh=await renderKyLuat(sh); }
+  } else if(state.tab==='gvcn'){
+    ch=cover('GVCN','Tổng hợp tình hình lớp',r.color,true);
+    mh=await guarded('gvcn',renderGVCN,r.color,'gvcn');
   }
 
-  app.innerHTML = coverHtml + mainHtml + tabbar();
+  app.innerHTML=ch+mh+tabbar();
   attachHandlers();
 }
 
-async function guarded(roleKey, renderFn){
-  if(!state.unlocked[roleKey]) return `<main>${lockBody(ROLE_META[state.tab].label, ROLE_META[state.tab].color, roleKey)}</main>`;
-  return await renderFn();
+async function guarded(roleKey, fn, color, rk){
+  if(!state.unlocked[roleKey]) return `<main>${lockBody(ROLE_META[state.tab].label,color,rk)}</main>`;
+  return await fn();
 }
 
-// ---------- PUBLIC VIEW ----------
+// ══ PUBLIC VIEW ════════════════════════════════════════════════
 async function renderPublic(){
-  const [attRaw, studyRaw, discLog] = await Promise.all([
+  const [attRaw,studyRaw,discLog]=await Promise.all([
     sget('attendance:'+state.date),
     sget('study:'+state.date),
     sget('discipline:log:'+state.month),
   ]);
-  const att = attRaw || {status:{}, phoneCount:0};
-  const study = studyRaw || {status:{}};
-  const log = Array.isArray(discLog) ? discLog : [];
+  const att=attRaw||{status:{},phoneCount:0};
+  const study=studyRaw||{status:{}};
+  const log=Array.isArray(discLog)?discLog:[];
 
-  // Điểm danh
-  const present=[], late=[], absent=[];
+  const present=[],late=[],absent=[];
   state.roster.forEach(s=>{
-    const st = att.status[s.id]||'present';
+    const st=att.status[s.id]||'present';
     if(st==='present') present.push(s.name);
     else if(st==='late') late.push(s.name);
     else absent.push(s.name);
   });
-  const attHtml = `
-    <div class="card">
-      <div class="row"><span class="name" style="color:var(--ok);">✅ Đúng giờ</span><span style="font-weight:700;">${present.length} bạn</span></div>
-      ${late.length?`<div class="row"><span class="name" style="color:var(--warn);">⏰ Muộn</span><span style="font-size:13px;color:var(--muted);">${late.join(', ')}</span></div>`:''}
-      ${absent.length?`<div class="row"><span class="name" style="color:var(--bad);">🚫 Vắng</span><span style="font-size:13px;color:var(--muted);">${absent.join(', ')}</span></div>`:''}
-      ${!late.length&&!absent.length?'<p class="empty" style="padding:8px 0;">Cả lớp đi đúng giờ hôm nay 🎉</p>':''}
-    </div>`;
 
-  // Học tập
-  const studyIssues = state.roster.filter(s=>['partial','none','noequip'].includes(study.status[s.id]));
-  const studyLabel = {partial:'Thiếu bài',none:'Không làm bài',noequip:'Thiếu dụng cụ'};
-  const studyHtml = studyIssues.length
-    ? `<div class="card">${studyIssues.map(s=>`<div class="row"><span class="name">${escapeHtml(s.name)}</span><span style="font-size:12px;color:var(--warn);">${studyLabel[study.status[s.id]]}</span></div>`).join('')}</div>`
-    : `<div class="card"><p class="empty" style="padding:8px 0;">Cả lớp hoàn thành bài tập 📚</p></div>`;
+  const attHtml=`<div class="card">
+    <div class="row"><span class="name" style="color:var(--ok)">✅ Đúng giờ</span><span style="font-weight:700">${present.length} bạn</span></div>
+    ${late.length?`<div class="row"><span class="name" style="color:var(--warn)">⏰ Muộn</span><span style="font-size:13px;color:var(--muted)">${late.join(', ')}</span></div>`:''}
+    ${absent.length?`<div class="row"><span class="name" style="color:var(--bad)">🚫 Vắng</span><span style="font-size:13px;color:var(--muted)">${absent.join(', ')}</span></div>`:''}
+    ${!late.length&&!absent.length?'<p class="empty" style="padding:8px 0">Cả lớp đi đúng giờ hôm nay 🎉</p>':''}
+  </div>`;
 
-  // Ranking tháng
-  const agg = {};
+  const studyIssues=state.roster.filter(s=>['partial','none','noequip'].includes(study.status[s.id]));
+  const sLabel={partial:'Thiếu bài',none:'Không làm bài',noequip:'Thiếu dụng cụ'};
+  const studyHtml=studyIssues.length
+    ?`<div class="card">${studyIssues.map(s=>`<div class="row"><span class="name">${escH(s.name)}</span><span class="badge badge-warn">${sLabel[study.status[s.id]]}</span></div>`).join('')}</div>`
+    :`<div class="card"><p class="empty" style="padding:8px 0">Cả lớp hoàn thành bài tập 📚</p></div>`;
+
+  const agg={};
   log.forEach(e=>{
     if(!agg[e.studentId]) agg[e.studentId]={cong:0,gay:0};
     if(e.type==='cong') agg[e.studentId].cong+=e.value; else agg[e.studentId].gay+=e.value;
   });
-  const ranked = state.roster
-    .map(s=>({...s,...(agg[s.id]||{cong:0,gay:0})}))
-    .sort((a,b)=>b.cong-a.cong||a.gay-b.gay);
+  const ranked=state.roster.map(s=>({...s,...(agg[s.id]||{cong:0,gay:0})})).sort((a,b)=>b.cong-a.cong||a.gay-b.gay);
   const medals=['🥇','🥈','🥉'];
-  const rankHtml = ranked.length ? ranked.map((s,i)=>`
+  const rankHtml=ranked.length?ranked.map((s,i)=>`
     <div class="row">
-      <span class="idx">${medals[i]||i+1}</span>
-      <span class="name">${escapeHtml(s.name)}</span>
-      <span style="font-size:12px;white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">+${s.cong}đ</span>${s.gay?` · <span style="color:var(--red);">${s.gay}🥢</span>`:''}</span>
-    </div>`).join('')
-    : '<p class="empty">Chưa có dữ liệu tháng này.</p>';
+      <span class="idx" style="width:24px;font-size:14px">${medals[i]||i+1}</span>
+      <span class="name">${escH(s.name)}</span>
+      <span style="font-size:12px;white-space:nowrap">
+        <span style="color:var(--ok);font-weight:700">+${s.cong}đ</span>
+        ${s.gay?` · <span style="color:var(--bad)">${s.gay}🥢</span>`:''}
+      </span>
+    </div>`).join(''):'<p class="empty">Chưa có dữ liệu tháng này.</p>';
 
   return `<main>
-    <h2 class="section">Điểm danh hôm nay</h2>
-    ${attHtml}
-    <h2 class="section">Học tập đầu giờ</h2>
-    ${studyHtml}
-    <h2 class="section">Ranking nền nếp <input type="month" id="monthInput" value="${state.month}" style="font-family:inherit;font-size:11px;border:1px solid var(--border);border-radius:8px;padding:3px 7px;background:var(--surf2);color:var(--text);margin-left:6px;letter-spacing:0;"></h2>
+    <h2 class="sec">Điểm danh hôm nay</h2>${attHtml}
+    <h2 class="sec">Học tập đầu giờ</h2>${studyHtml}
+    <h2 class="sec">Ranking nền nếp <input type="month" id="monthInput" value="${state.month}"></h2>
     <div class="card">${rankHtml}</div>
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:16px;">👀 Chỉ xem · không thể chỉnh sửa</p>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:4px">👀 Chỉ xem · không thể chỉnh sửa</p>
   </main>`;
 }
 
+// ══ HOME (GVCN roster) ════════════════════════════════════════
 async function renderHome(){
-  if(state.sub.home !== 'phancong'){
-    const rows = state.roster.map((s,i)=>`
-      <div class="roster-edit-row" data-id="${s.id}">
+  if(state.sub.home!=='phancong'){
+    const rows=state.roster.map((s,i)=>`
+      <div class="redit" data-id="${s.id}">
         <span class="idx">${i+1}</span>
-        <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
-        <select class="select-to" data-id="${s.id}">
+        <input type="text" class="rname" value="${escH(s.name)}" placeholder="Họ và tên">
+        <select class="sel-to" data-id="${s.id}">
           <option value="" ${!s.to?'selected':''}>Tổ?</option>
           <option value="1" ${s.to===1?'selected':''}>Tổ 1</option>
           <option value="2" ${s.to===2?'selected':''}>Tổ 2</option>
           <option value="3" ${s.to===3?'selected':''}>Tổ 3</option>
         </select>
-        <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
+        <button class="rm-btn" data-act="rm-s" data-id="${s.id}">✕</button>
       </div>`).join('');
     return `<main>
-      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công']])}
-      <h2 class="section">Học sinh (${state.roster.length})</h2>
+      ${subtabs('home',[['ds','Danh sách'],['phancong','Phân công']])}
+      <h2 class="sec">Học sinh (${state.roster.length})</h2>
       <div class="card">
-        ${rows || '<p class="empty">Chưa có học sinh nào.</p>'}
-        <button class="add-btn" data-act="add-student">+ Thêm học sinh</button>
+        ${rows||'<p class="empty">Chưa có học sinh nào.</p>'}
+        <button class="btn-add" data-act="add-s">+ Thêm học sinh</button>
       </div>
-      <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
-      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Chọn Tổ để tổ trưởng chỉ thấy tổ mình.</p>
+      <button class="btn-primary" data-act="save-roster">💾 Lưu danh sách</button>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px">Nhớ nhấn Lưu sau khi chỉnh sửa.</p>
     </main>`;
   } else {
-    const assign = await sget('assignments') || {};
-    const rows = ASSIGNMENT_FIELDS.map(f=>`
-      <div class="card" style="margin-bottom:8px;">
-        <div class="week-name">${f.title}</div>
-        <div class="week-sub" style="margin-bottom:8px;">${f.desc}</div>
-        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách..." style="margin-top:0;">
+    const assign=await sget('assignments')||{};
+    const rows=ASSIGNMENT_FIELDS.map(f=>`
+      <div class="card" style="margin-bottom:8px">
+        <p style="margin:0 0 4px;font-weight:700;font-size:14px">${f.title}</p>
+        <p style="margin:0 0 10px;font-size:12px;color:var(--muted)">${f.desc}</p>
+        <input type="text" class="field-input assign-input" data-key="${f.key}" value="${escH(assign[f.key]||'')}" placeholder="Tên bạn phụ trách…">
       </div>`).join('');
     return `<main>
-      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công']])}
-      <h2 class="section">Phân công ban cán sự</h2>
+      ${subtabs('home',[['ds','Danh sách'],['phancong','Phân công']])}
+      <h2 class="sec">Phân công ban cán sự</h2>
       ${rows}
-      <button class="primary-btn" data-act="save-assignments">Lưu phân công</button>
+      <button class="btn-primary" data-act="save-assign">💾 Lưu phân công</button>
     </main>`;
   }
 }
 
-let ltLoadedDate = null;
+// ══ LT — Điểm danh ═══════════════════════════════════════════
 async function renderLT(){
-  if(ltLoadedDate !== state.date){
-    ltData = await sget('attendance:'+state.date) || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
-    ltLoadedDate = state.date;
+  if(ltLoadedDate!==state.date){
+    ltData=await sget('attendance:'+state.date)||{status:{},phoneCount:0,openedBox:false,closedBox:false};
+    ltLoadedDate=state.date;
   }
-  const present = state.roster.filter(s => (ltData.status[s.id]||'present')==='present').length;
-  const rows = state.roster.map((s,i)=>{
-    const st = ltData.status[s.id] || 'present';
+  const present=state.roster.filter(s=>(ltData.status[s.id]||'present')==='present').length;
+  const rows=state.roster.map((s,i)=>{
+    const st=ltData.status[s.id]||'present';
     return `<div class="row">
-      <span class="idx">${i+1}</span><span class="name">${escapeHtml(s.name)}</span>
-      <div class="seg" data-id="${s.id}" data-group="att">
-        <button data-val="present" class="${st==='present'?'on-ok':''}">Đúng giờ</button>
-        <button data-val="late" class="${st==='late'?'on-warn':''}">Muộn</button>
-        <button data-val="absent" class="${st==='absent'?'on-bad':''}">Vắng</button>
+      <span class="idx">${i+1}</span>
+      <span class="name">${escH(s.name)}</span>
+      <div class="seg" data-id="${s.id}" data-g="att">
+        <button data-v="present" class="${st==='present'?'on-ok':''}">Đúng giờ</button>
+        <button data-v="late"    class="${st==='late'?'on-warn':''}">Muộn</button>
+        <button data-v="absent"  class="${st==='absent'?'on-bad':''}">Vắng</button>
       </div>
     </div>`;
   }).join('');
-  const phoneOk = ltData.phoneCount === present && state.roster.length>0;
+  const phoneOk=ltData.phoneCount===present&&state.roster.length>0;
   return `<main>
     <div class="stat-strip">
       <span class="pill">Sĩ số <b>${state.roster.length}</b></span>
       <span class="pill">Có mặt <b>${present}</b></span>
-      <span class="pill">Vắng <b>${state.roster.length - present}</b></span>
+      <span class="pill">Vắng <b>${state.roster.length-present}</b></span>
     </div>
-    <h2 class="section">Điểm danh</h2>
-    <div class="card">${rows || emptyRoster()}</div>
-    <h2 class="section">Thu điện thoại</h2>
+    <h2 class="sec">Điểm danh</h2>
+    <div class="card">${rows||emptyRoster()}</div>
+    <h2 class="sec">Thu điện thoại</h2>
     <div class="card counter-card">
       <div>
-        <div class="counter-num ${phoneOk?'ok':''}" id="phoneCountNum">${ltData.phoneCount}</div>
-        <div class="week-sub">/ ${present} bạn có mặt ${phoneOk?'· Đủ ✓':''}</div>
+        <div class="counter-num${phoneOk?' ok':''}" id="phoneNum">${ltData.phoneCount}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">/ ${present} có mặt ${phoneOk?'· Đủ ✓':''}</div>
       </div>
-      <div class="counter-btns"><button data-act="phone-dec">−</button><button data-act="phone-inc">+</button></div>
+      <div class="counter-btns">
+        <button data-act="phone-dec">−</button>
+        <button data-act="phone-inc">+</button>
+      </div>
     </div>
-    <h2 class="section">Hòm điện thoại</h2>
+    <h2 class="sec">Hòm điện thoại</h2>
     <div class="card">
       <label class="check-row"><input type="checkbox" data-act="chk-open" ${ltData.openedBox?'checked':''}> Đã mở hòm đầu giờ</label>
       <label class="check-row"><input type="checkbox" data-act="chk-close" ${ltData.closedBox?'checked':''}> Đã dọn hòm cuối giờ</label>
     </div>
+    <button class="btn-primary" style="background:${ROLE_META.lt.color}" data-act="save-lt">💾 Lưu điểm danh hôm nay</button>
   </main>`;
 }
 
-let htLoadedDate = null;
+// ══ HỌC TẬP ════════════════════════════════════════════════════
 async function renderHocTap(){
-  if(state.sub.hoctap === 'today'){
-    if(htLoadedDate !== state.date){
-      htData = await sget('study:'+state.date) || {status:{}, remind:false};
-      htLoadedDate = state.date;
+  if(state.sub.hoctap==='today'){
+    if(htLoadedDate!==state.date){
+      htData=await sget('study:'+state.date)||{status:{},remind:false};
+      htLoadedDate=state.date;
     }
-    const rows = state.roster.map((s,i)=>{
-      const st = htData.status[s.id] || 'full';
+    const rows=state.roster.map((s,i)=>{
+      const st=htData.status[s.id]||'full';
       return `<div class="row">
-        <span class="idx">${i+1}</span><span class="name full-w">${escapeHtml(s.name)}</span>
-        <div class="seg seg4" data-id="${s.id}" data-group="study">
-          <button data-val="full" class="${st==='full'?'on-ok':''}">Đủ bài</button>
-          <button data-val="partial" class="${st==='partial'?'on-warn':''}">Thiếu bài</button>
-          <button data-val="none" class="${st==='none'?'on-bad':''}">Không làm</button>
-          <button data-val="noequip" class="${st==='noequip'?'on-info':''}">Thiếu ĐD</button>
+        <span class="idx">${i+1}</span>
+        <span class="name full-w">${escH(s.name)}</span>
+        <div class="seg seg4" data-id="${s.id}" data-g="study">
+          <button data-v="full"    class="${st==='full'?'on-ok':''}">Đủ bài</button>
+          <button data-v="partial" class="${st==='partial'?'on-warn':''}">Thiếu bài</button>
+          <button data-v="none"    class="${st==='none'?'on-bad':''}">Không làm</button>
+          <button data-v="noequip" class="${st==='noequip'?'on-info':''}">Thiếu ĐD</button>
         </div>
       </div>`;
     }).join('');
     return `<main>
-      ${subtabs('hoctap', [['today','Hôm nay'],['week','Tổng hợp tuần']])}
-      <label class="check-row" style="margin-bottom:8px;"><input type="checkbox" data-act="chk-remind" ${htData.remind?'checked':''}> Đã nhắc BTVN lên nhóm hôm nay</label>
-      <h2 class="section">Truy bài 15 phút đầu giờ</h2>
-      <div class="card">${rows || emptyRoster()}</div>
+      ${subtabs('hoctap',[['today','Hôm nay'],['week','Tổng hợp tuần']])}
+      <label class="check-row" style="margin-bottom:10px">
+        <input type="checkbox" data-act="chk-remind" ${htData.remind?'checked':''}> Đã nhắc BTVN lên nhóm hôm nay
+      </label>
+      <h2 class="sec">Truy bài 15 phút đầu giờ</h2>
+      <div class="card">${rows||emptyRoster()}</div>
+      <button class="btn-primary" style="background:${ROLE_META.hoctap.color}" data-act="save-ht">💾 Lưu kết quả học tập</button>
     </main>`;
   } else {
-    const weekData = await computeWeekly();
-    const rows = state.roster.map(s=>{
-      const c = weekData[s.id] || {partial:0, none:0, noequip:0};
-      const issues = c.partial + c.none + c.noequip;
-      const flagged = issues >= 3;
-      const pct = Math.min(100, issues*100/7);
-      return `<div class="week-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span class="week-name">${escapeHtml(s.name)}</span>
-          <span style="font-size:13px;font-weight:700;color:${flagged?'var(--red)':'var(--muted)'};">${issues} lần</span>
+    const weekData=await computeWeekly();
+    const rows=state.roster.map(s=>{
+      const c=weekData[s.id]||{partial:0,none:0,noequip:0};
+      const issues=c.partial+c.none+c.noequip;
+      const flagged=issues>=3;
+      const pct=Math.min(100,issues*100/7);
+      return `<div class="wcard">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="wcard-title">${escH(s.name)}</span>
+          <span style="font-size:13px;font-weight:700;color:${flagged?'var(--bad)':'var(--muted)'}">${issues} lần</span>
         </div>
-        ${flagged?'<span class="badge-flag">⚠️ Cần chú ý</span>':''}
-        <div class="week-sub" style="margin-top:4px;">Thiếu bài: ${c.partial} · Không làm: ${c.none} · Thiếu ĐD: ${c.noequip}</div>
-        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${flagged?'var(--red)':'var(--warn)'}"></div></div>
+        ${flagged?'<span class="flag">⚠️ Cần chú ý</span>':''}
+        <div class="wcard-sub">Thiếu: ${c.partial} · Không làm: ${c.none} · Thiếu ĐD: ${c.noequip}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${flagged?'var(--bad)':'var(--warn)'}"></div></div>
       </div>`;
     }).join('');
     return `<main>
-      ${subtabs('hoctap', [['today','Hôm nay'],['week','Tổng hợp tuần']])}
-      <h2 class="section">7 ngày gần nhất</h2>
-      <p class="week-sub" style="margin-bottom:12px;">Từ 3 lần trở lên → cần chú ý.</p>
-      ${rows || emptyRoster()}
+      ${subtabs('hoctap',[['today','Hôm nay'],['week','Tổng hợp tuần']])}
+      <h2 class="sec">7 ngày gần nhất</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Từ 3 lần trở lên → cần chú ý.</p>
+      ${rows||emptyRoster()}
     </main>`;
   }
 }
 async function computeWeekly(){
-  const dates = [];
-  const d = new Date(state.date+'T00:00:00');
-  for(let i=0;i<7;i++){ const dd=new Date(d); dd.setDate(d.getDate()-i); dates.push(dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0')); }
-  const result = {};
-  const recs = await Promise.all(dates.map(dt=> sget('study:'+dt)));
-  recs.forEach(rec=>{
-    if(!rec) return;
-    for(const [sid, st] of Object.entries(rec.status||{})){
-      if(!result[sid]) result[sid] = {partial:0, none:0, noequip:0};
-      if(st==='partial') result[sid].partial++;
-      if(st==='none') result[sid].none++;
-      if(st==='noequip') result[sid].noequip++;
+  const dates=[];
+  const d=new Date(state.date+'T00:00:00');
+  for(let i=0;i<7;i++){const dd=new Date(d);dd.setDate(d.getDate()-i);dates.push(dd.getFullYear()+'-'+p2(dd.getMonth()+1)+'-'+p2(dd.getDate()));}
+  const res={};
+  const recs=await Promise.all(dates.map(dt=>sget('study:'+dt)));
+  recs.forEach(r=>{
+    if(!r) return;
+    for(const[sid,st] of Object.entries(r.status||{})){
+      if(!res[sid]) res[sid]={partial:0,none:0,noequip:0};
+      if(st==='partial') res[sid].partial++;
+      if(st==='none') res[sid].none++;
+      if(st==='noequip') res[sid].noequip++;
     }
   });
-  return result;
+  return res;
 }
 
-let ldConfigLoaded = false, ldLoadedDate = null;
+// ══ LAO ĐỘNG ════════════════════════════════════════════════════
 async function renderLaoDong(){
   if(!ldConfigLoaded){
-    ldConfig = await sget('duty:config') || {groupSize:4, startDate: state.date, order: state.roster.map(s=>s.id)};
-    ldConfigLoaded = true;
+    ldConfig=await sget('duty:config')||{groupSize:4,startDate:state.date,order:state.roster.map(s=>s.id)};
+    ldConfigLoaded=true;
   }
-  const rosterIds = state.roster.map(s=>s.id);
-  ldConfig.order = ldConfig.order.filter(id=>rosterIds.includes(id));
-  for(const id of rosterIds){ if(!ldConfig.order.includes(id)) ldConfig.order.push(id); }
-  if(ldLoadedDate !== state.date){
-    ldDayData = await sget('duty:'+state.date) || {assigned: computeAssigned(state.date), checked:null, note:''};
-    ldLoadedDate = state.date;
+  const rIds=state.roster.map(s=>s.id);
+  ldConfig.order=ldConfig.order.filter(id=>rIds.includes(id));
+  for(const id of rIds){ if(!ldConfig.order.includes(id)) ldConfig.order.push(id); }
+  if(ldLoadedDate!==state.date){
+    ldDayData=await sget('duty:'+state.date)||{assigned:computeAssigned(state.date),checked:null,note:''};
+    ldLoadedDate=state.date;
   }
-
-  if(state.sub.laodong === 'today'){
-    const rows = state.roster.map((s,i)=>{
-      const checked = ldDayData.assigned.includes(s.id);
-      return `<label class="row" style="cursor:pointer;">
-        <input type="checkbox" data-act="toggle-duty" data-id="${s.id}" ${checked?'checked':''} style="width:22px;height:22px;accent-color:var(--warn);">
-        <span class="idx">${i+1}</span><span class="name">${escapeHtml(s.name)}</span>
-      </label>`;
-    }).join('');
+  if(state.sub.laodong==='today'){
+    const rows=state.roster.map((s,i)=>`
+      <label class="row" style="cursor:pointer">
+        <input type="checkbox" data-act="toggle-duty" data-id="${s.id}" ${ldDayData.assigned.includes(s.id)?'checked':''} style="width:20px;height:20px;accent-color:var(--warn)">
+        <span class="idx">${i+1}</span>
+        <span class="name">${escH(s.name)}</span>
+      </label>`).join('');
     return `<main>
-      ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
-      <h2 class="section">Trực nhật hôm nay</h2>
-      <div class="card">${rows || emptyRoster()}</div>
-      <h2 class="section">Kiểm tra cuối giờ</h2>
+      ${subtabs('laodong',[['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
+      <h2 class="sec">Trực nhật hôm nay</h2>
+      <div class="card">${rows||emptyRoster()}</div>
+      <h2 class="sec">Kiểm tra cuối giờ</h2>
       <div class="card">
-        <div class="seg" data-group="duty-check" style="width:100%;">
-          <button data-val="pass" style="flex:1;${ldDayData.checked==='pass'?'background:var(--ok);color:#000;':''}">✓ Đạt</button>
-          <button data-val="fail" style="flex:1;${ldDayData.checked==='fail'?'background:var(--bad);color:#fff;':''}">✗ Chưa đạt</button>
+        <div class="seg" data-g="duty-check" style="width:100%">
+          <button data-v="pass" style="flex:1${ldDayData.checked==='pass'?';background:var(--ok);color:#fff':''}">✓ Đạt</button>
+          <button data-v="fail" style="flex:1${ldDayData.checked==='fail'?';background:var(--bad);color:#fff':''}">✗ Chưa đạt</button>
         </div>
-        <textarea class="note-input" id="dutyNote" rows="2" placeholder="Ghi chú (vd: bảng chưa lau…)">${escapeHtml(ldDayData.note||'')}</textarea>
-        <button class="primary-btn role" data-act="save-duty-note" style="background:var(--warn);">Lưu nhận xét</button>
+        <textarea class="note-input" id="dutyNote" rows="2" placeholder="Ghi chú (vd: bảng chưa lau…)" style="margin-top:10px">${escH(ldDayData.note||'')}</textarea>
       </div>
+      <button class="btn-primary" style="background:${ROLE_META.laodong.color}" data-act="save-duty">💾 Lưu kết quả trực nhật</button>
     </main>`;
-  } else if(state.sub.laodong === 'upcoming'){
-    let rows = '';
-    const d0 = new Date(state.date+'T00:00:00');
+  } else if(state.sub.laodong==='upcoming'){
+    let rows='';
+    const d0=new Date(state.date+'T00:00:00');
     for(let i=0;i<7;i++){
-      const dd = new Date(d0); dd.setDate(d0.getDate()+i);
-      const ds = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
-      const ids = computeAssigned(ds);
-      const names = ids.map(id=> state.roster.find(s=>s.id===id)?.name || '?').join(', ');
-      rows += `<div class="week-card"><div class="week-name">${formatDateVN(ds)}${i===0?' · hôm nay':''}</div><div class="week-sub">${names || '—'}</div></div>`;
+      const dd=new Date(d0);dd.setDate(d0.getDate()+i);
+      const ds=dd.getFullYear()+'-'+p2(dd.getMonth()+1)+'-'+p2(dd.getDate());
+      const ids=computeAssigned(ds);
+      const names=ids.map(id=>state.roster.find(s=>s.id===id)?.name||'?').join(', ');
+      rows+=`<div class="wcard"><div class="wcard-title">${fmtDate(ds)}${i===0?' · hôm nay':''}</div><div class="wcard-sub">${names||'—'}</div></div>`;
     }
-    return `<main>${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}<h2 class="section">Gợi ý 7 ngày tới</h2>${rows}</main>`;
+    return `<main>${subtabs('laodong',[['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}<h2 class="sec">Gợi ý 7 ngày tới</h2>${rows}</main>`;
   } else {
     return `<main>
-      ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
-      <h2 class="section">Cài đặt vòng quay</h2>
+      ${subtabs('laodong',[['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
+      <h2 class="sec">Cài đặt vòng quay</h2>
       <div class="card">
-        <label class="field-label">Số bạn trực mỗi buổi</label>
-        <input type="text" inputmode="numeric" class="note-input" id="groupSizeInput" value="${ldConfig.groupSize}" style="margin-top:0;">
-        <label class="field-label">Ngày bắt đầu vòng quay</label>
-        <input type="date" class="note-input" id="startDateInput" value="${ldConfig.startDate}" style="margin-top:0;">
-        <button class="primary-btn role" data-act="save-duty-config" style="background:var(--warn);">Lưu cài đặt</button>
+        <label class="lbl">Số bạn trực mỗi buổi</label>
+        <input type="text" inputmode="numeric" class="field-input" id="groupSizeInput" value="${ldConfig.groupSize}">
+        <label class="lbl">Ngày bắt đầu vòng quay</label>
+        <input type="date" class="field-input" id="startDateInput" value="${ldConfig.startDate}">
+        <button class="btn-primary" style="background:${ROLE_META.laodong.color}" data-act="save-duty-config">💾 Lưu cài đặt</button>
       </div>
-      <p class="week-sub">Đây là gợi ý — vẫn có thể tick tay ở tab Hôm nay.</p>
+      <p style="font-size:12px;color:var(--muted)">Đây là gợi ý — vẫn có thể tick tay ở tab Hôm nay.</p>
     </main>`;
   }
 }
 function computeAssigned(dateStr){
-  if(!ldConfig || ldConfig.order.length===0) return [];
-  const start = new Date(ldConfig.startDate+'T00:00:00');
-  const cur = new Date(dateStr+'T00:00:00');
-  const dayIndex = Math.floor((cur-start)/86400000);
-  const n = ldConfig.order.length;
-  const size = Math.max(1, parseInt(ldConfig.groupSize)||1);
-  const groups = Math.ceil(n/size);
-  if(dayIndex < 0 || groups===0) return ldConfig.order.slice(0,size);
-  const g = ((dayIndex % groups)+groups) % groups;
-  return ldConfig.order.slice(g*size, g*size+size);
+  if(!ldConfig||ldConfig.order.length===0) return [];
+  const start=new Date(ldConfig.startDate+'T00:00:00');
+  const cur=new Date(dateStr+'T00:00:00');
+  const dayIdx=Math.floor((cur-start)/86400000);
+  const n=ldConfig.order.length;
+  const size=Math.max(1,parseInt(ldConfig.groupSize)||1);
+  const groups=Math.ceil(n/size);
+  if(dayIdx<0||groups===0) return ldConfig.order.slice(0,size);
+  const g=((dayIdx%groups)+groups)%groups;
+  return ldConfig.order.slice(g*size,g*size+size);
 }
 
-function monthOf(dateStr){ return dateStr.slice(0,7); }
-function prevMonths(month, n){
-  const [y,m] = month.split('-').map(Number);
-  const arr=[];
-  for(let i=0;i<n;i++){ let mm=m-i, yy=y; while(mm<=0){mm+=12; yy-=1;} arr.push(yy+'-'+String(mm).padStart(2,'0')); }
-  return arr;
-}
-async function getMonthLog(month){ return await sget('discipline:log:'+month) || []; }
-function aggregateLog(log){
-  const agg = {};
-  log.forEach(e=>{
-    if(!agg[e.studentId]) agg[e.studentId] = {cong:0, gay:0};
-    if(e.type==='cong') agg[e.studentId].cong += e.value; else agg[e.studentId].gay += e.value;
-  });
-  return agg;
-}
-function gayTier(total){
-  if(total>=3) return {label:'Báo phụ huynh · cân nhắc hạnh kiểm'};
-  if(total===2) return {label:'Viết kiểm điểm + phạt trực nhật 3 ngày'};
-  if(total===1) return {label:'Khiển trách'};
-  return null;
-}
-function quyenLoiTier(total){
-  const badges=[];
-  if(total>50) badges.push('Đổi chỗ ngồi theo ý muốn');
-  if(total>=40) badges.push('Quà to + tuyên dương');
-  else if(total>=20) badges.push('Quà nhỏ + tuyên dương');
-  return badges;
-}
-async function renderKyLuat(subHtml){
-  const toNum = parseInt(state.sub.kyluat.split('-')[1]);
-  const students = state.roster.filter(s=> s.to === toNum);
-  const log = await getMonthLog(state.month);
-  const agg = aggregateLog(log);
-  const catList = disciplineForm.type === 'cong' ? CONG_CATEGORIES : VIPHAM_CATEGORIES;
-  const catOptions = catList.map(c=>`<option value="${escapeAttr(c.label)}" ${disciplineForm.category===c.label?'selected':''}>${escapeHtml(c.label)} (${disciplineForm.type==='cong'?'+'+c.pts+' đ':c.gay+' 🥢'})</option>`).join('') + `<option value="Khác" ${disciplineForm.category==='Khác'?'selected':''}>Khác (thảo luận với GVCN)</option>`;
-  const studentOptions = students.map(s=>`<option value="${s.id}" ${disciplineForm.studentId===s.id?'selected':''}>${escapeAttr(s.name)}</option>`).join('');
-  const isKhac = disciplineForm.category === 'Khác';
-  const color = ROLE_META.kyluat.color;
+// ══ KỶ LUẬT ════════════════════════════════════════════════════
+async function renderKyLuat(sh){
+  const toNum=parseInt(state.sub.kyluat.split('-')[1]);
+  const students=state.roster.filter(s=>s.to===toNum);
+  const log=await sget('discipline:log:'+state.month)||[];
+  const agg=aggregateLog(log);
+  const catList=disciplineForm.type==='cong'?CONG_CATEGORIES:VIPHAM_CATEGORIES;
+  const catOpts=catList.map(c=>`<option value="${escH(c.label)}" ${disciplineForm.category===c.label?'selected':''}>${escH(c.label)} (${disciplineForm.type==='cong'?'+'+c.pts+'đ':c.gay+'🥢'})</option>`).join('')+`<option value="Khác" ${disciplineForm.category==='Khác'?'selected':''}>Khác (thảo luận GVCN)</option>`;
+  const stuOpts=students.map(s=>`<option value="${s.id}" ${disciplineForm.studentId===s.id?'selected':''}>${escH(s.name)}</option>`).join('');
+  const color=ROLE_META.kyluat.color;
 
-  const monthRows = students.map(s=>{
-    const a = agg[s.id] || {cong:0, gay:0};
-    const tier = gayTier(a.gay);
-    const badges = quyenLoiTier(a.cong);
-    return `<div class="card" style="margin-bottom:8px;">
-      <div class="disc-summary">
-        <span class="week-name">${escapeHtml(s.name)}</span>
-        <div style="display:flex;gap:14px;align-items:center;">
-          <div class="score-block"><div class="score-num" style="color:var(--teal);">+${a.cong}</div><div class="score-label" style="color:var(--teal);">điểm</div></div>
-          <div class="score-block"><div class="score-num" style="color:var(--red);">${a.gay}</div><div class="score-label" style="color:var(--red);">🥢</div></div>
+  const monthRows=students.map(s=>{
+    const a=agg[s.id]||{cong:0,gay:0};
+    const tier=gayTier(a.gay);
+    const badges=quyenLoiTier(a.cong);
+    return `<div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:14px">${escH(s.name)}</span>
+        <div style="display:flex;gap:14px">
+          <div class="score-block"><div class="score-num" style="color:var(--ok)">+${a.cong}</div><div class="score-lbl" style="color:var(--ok)">điểm</div></div>
+          <div class="score-block"><div class="score-num" style="color:var(--bad)">${a.gay}</div><div class="score-lbl" style="color:var(--bad)">🥢</div></div>
         </div>
       </div>
-      ${tier ? `<div class="badge-flag">${tier.label}</div>` : ''}
-      ${badges.length ? `<div class="week-sub" style="margin-top:6px;color:var(--teal);">🎁 ${badges.join(' · ')}</div>` : ''}
+      ${tier?`<div class="badge badge-bad" style="margin-top:8px">${tier.label}</div>`:''}
+      ${badges.length?`<div style="font-size:12px;color:var(--ok);margin-top:6px">🎁 ${badges.join(' · ')}</div>`:''}
     </div>`;
   }).join('');
 
-  const recent = log.filter(e=> students.some(s=>s.id===e.studentId)).slice().reverse().slice(0,20).map(e=>{
-    const name = state.roster.find(s=>s.id===e.studentId)?.name || '(đã xoá)';
-    const isCong = e.type==='cong';
-    return `<div class="disc-entry">
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
-        <span style="flex:1;"><b>${escapeHtml(name)}</b> — <span style="color:var(--muted);">${escapeHtml(e.category)}${e.note?(' · '+escapeHtml(e.note)):''}</span></span>
-        <span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span>
+  const recent=log.filter(e=>students.some(s=>s.id===e.studentId)).slice().reverse().slice(0,20).map(e=>{
+    const name=state.roster.find(s=>s.id===e.studentId)?.name||'(đã xoá)';
+    const isC=e.type==='cong';
+    return `<div class="dentry">
+      <div class="dentry-row">
+        <span style="flex:1"><b>${escH(name)}</b> — <span style="color:var(--muted)">${escH(e.category)}${e.note?' · '+escH(e.note):''}</span></span>
+        <span class="dpts ${isC?'pos':'neg'}">${isC?'+'+e.value+'đ':e.value+' 🥢'}</span>
       </div>
-      <div class="week-sub">${formatDateVN(e.date)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtDate(e.date)}</div>
     </div>`;
   }).join('');
 
-  return `<main>${subHtml}
-    <h2 class="section">Ghi nhận — Tổ ${toNum}</h2>
+  return `<main>${sh}
+    <h2 class="sec">Ghi nhận — Tổ ${toNum}</h2>
     <div class="card">
-      <div class="seg" style="width:100%;margin-bottom:12px;">
-        <button data-form-type="cong" style="flex:1;${disciplineForm.type==='cong'?'background:var(--teal);color:#000;':''}">⬆ Điểm cộng</button>
-        <button data-form-type="vipham" style="flex:1;${disciplineForm.type==='vipham'?'background:var(--red);color:#fff;':''}">🥢 Vi phạm</button>
+      <div class="seg" style="width:100%;margin-bottom:12px">
+        <button data-ft="cong"   style="flex:1${disciplineForm.type==='cong'  ?';background:var(--ok);color:#fff':''}">⬆ Điểm cộng</button>
+        <button data-ft="vipham" style="flex:1${disciplineForm.type==='vipham'?';background:var(--bad);color:#fff':''}">🥢 Vi phạm</button>
       </div>
-      <label class="field-label">Học sinh — Tổ ${toNum}</label>
-      <select class="sel" id="discStudent" style="margin-top:0;">${studentOptions || '<option value="">— chưa có bạn nào —</option>'}</select>
-      <label class="field-label">Danh mục</label>
-      <select class="sel" id="discCategory" style="margin-top:0;">${catOptions}</select>
-      ${isKhac ? `<label class="field-label">${disciplineForm.type==='cong'?'Số điểm cộng':'Số gậy'}</label><input type="text" inputmode="numeric" class="note-input" id="discCustomValue" placeholder="Nhập số, đã thảo luận với GVCN" style="margin-top:0;">` : ''}
-      <label class="field-label">Ghi chú (tuỳ chọn)</label>
-      <input type="text" class="note-input" id="discNote" placeholder="Chi tiết cụ thể…" style="margin-top:0;">
-      <button class="primary-btn" style="background:${color};" data-act="add-disc">Lưu ghi nhận</button>
+      <label class="lbl">Học sinh — Tổ ${toNum}</label>
+      <select class="sel" id="discStu">${stuOpts||'<option value="">— chưa có bạn nào —</option>'}</select>
+      <label class="lbl">Danh mục</label>
+      <select class="sel" id="discCat">${catOpts}</select>
+      ${disciplineForm.category==='Khác'?`<label class="lbl">${disciplineForm.type==='cong'?'Số điểm cộng':'Số gậy'}</label><input type="text" inputmode="numeric" class="field-input" id="discCustomVal" placeholder="Nhập số (đã thảo luận GVCN)">`:'' }
+      <label class="lbl">Ghi chú (tuỳ chọn)</label>
+      <input type="text" class="field-input" id="discNote" placeholder="Chi tiết cụ thể…">
+      <button class="btn-primary" style="background:${color}" data-act="add-disc">💾 Lưu ghi nhận</button>
     </div>
-    <h2 class="section">Tổng hợp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
-    ${monthRows || emptyRoster()}
-    <h2 class="section">Nhật ký — Tổ ${toNum}</h2>
-    <div class="card">${recent || '<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
+    <h2 class="sec">Tổng hợp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
+    ${monthRows||emptyRoster()}
+    <h2 class="sec">Nhật ký — Tổ ${toNum}</h2>
+    <div class="card">${recent||'<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
   </main>`;
 }
 
+function gayTier(total){
+  if(total>=3) return{label:'Báo phụ huynh · cân nhắc hạnh kiểm'};
+  if(total===2) return{label:'Viết kiểm điểm + phạt trực nhật 3 ngày'};
+  if(total===1) return{label:'Khiển trách'};
+  return null;
+}
+function quyenLoiTier(total){
+  const b=[];
+  if(total>50) b.push('Đổi chỗ ngồi theo ý muốn');
+  if(total>=40) b.push('Quà to + tuyên dương');
+  else if(total>=20) b.push('Quà nhỏ + tuyên dương');
+  return b;
+}
+function aggregateLog(log){
+  const agg={};
+  log.forEach(e=>{
+    if(!agg[e.studentId]) agg[e.studentId]={cong:0,gay:0};
+    if(e.type==='cong') agg[e.studentId].cong+=e.value; else agg[e.studentId].gay+=e.value;
+  });
+  return agg;
+}
+
+// ══ GVCN ════════════════════════════════════════════════════════
 async function renderGVCN(){
-  const months3 = prevMonths(state.month, 3);
-  const [attRaw, studyRaw, dutyRaw, assign, ...logsByMonth] = await Promise.all([
+  function prevMonths(month,n){
+    const[y,m]=month.split('-').map(Number); const arr=[];
+    for(let i=0;i<n;i++){let mm=m-i,yy=y; while(mm<=0){mm+=12;yy--;} arr.push(yy+'-'+p2(mm));}
+    return arr;
+  }
+  const months3=prevMonths(state.month,3);
+  const [attRaw,studyRaw,dutyRaw,assign,...logsByMonth]=await Promise.all([
     sget('attendance:'+state.date),
     sget('study:'+state.date),
     sget('duty:'+state.date),
     sget('assignments'),
-    ...months3.map(m=> getMonthLog(m))
+    ...months3.map(m=>sget('discipline:log:'+m).then(r=>Array.isArray(r)?r:[])),
   ]);
-  const att = attRaw || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
-  const lateList=[], absentList=[];
-  state.roster.forEach(s=>{ const st=att.status[s.id]||'present'; if(st==='late') lateList.push(s.name); else if(st==='absent') absentList.push(s.name); });
-  const study = studyRaw || {status:{}, remind:false};
-  const issueList = state.roster.filter(s=> ['partial','none','noequip'].includes(study.status[s.id])).map(s=>({name:s.name, st:study.status[s.id]}));
-  const duty = dutyRaw || null;
-  const dutyNames = duty ? duty.assigned.map(id=>state.roster.find(s=>s.id===id)?.name||'?') : [];
-  const aggByMonth = logsByMonth.map(aggregateLog);
-  const agg = aggByMonth[0];
+  const att=attRaw||{status:{},phoneCount:0,openedBox:false,closedBox:false};
+  const lateList=[],absentList=[];
+  state.roster.forEach(s=>{const st=att.status[s.id]||'present'; if(st==='late') lateList.push(s.name); else if(st==='absent') absentList.push(s.name);});
+  const study=studyRaw||{status:{},remind:false};
+  const issueList=state.roster.filter(s=>['partial','none','noequip'].includes(study.status[s.id])).map(s=>({name:s.name,st:study.status[s.id]}));
+  const duty=dutyRaw||null;
+  const dutyNames=duty?duty.assigned.map(id=>state.roster.find(s=>s.id===id)?.name||'?'):[];
+  const aggByMonth=logsByMonth.map(aggregateLog);
+  const agg=aggByMonth[0];
 
-  const disciplineRows = [1,2,3].map(toNum=>{
-    const students = state.roster.filter(s=>s.to===toNum);
-    const rows = students.map(s=>{
-      const a = agg[s.id]||{cong:0,gay:0};
-      const tier = gayTier(a.gay);
-      const badges = quyenLoiTier(a.cong);
-      const chronic = months3.every((m,i)=> (aggByMonth[i][s.id]?.gay||0) >=3 );
-      return `<div class="row"><span class="name">${escapeHtml(s.name)}</span><span style="font-size:12px;color:var(--muted);"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?' · '+tier.label:''}${chronic?' · <b style="color:var(--red);">Cân nhắc hạnh kiểm kỳ</b>':''}${badges.length?' · 🎁 '+badges.join(', '):''}</span></div>`;
+  const discRows=[1,2,3].map(toNum=>{
+    const students=state.roster.filter(s=>s.to===toNum);
+    const rows=students.map(s=>{
+      const a=agg[s.id]||{cong:0,gay:0};
+      const tier=gayTier(a.gay);
+      const badges=quyenLoiTier(a.cong);
+      const chronic=months3.every((m,i)=>(aggByMonth[i][s.id]?.gay||0)>=3);
+      return `<div class="row"><span class="name">${escH(s.name)}</span>
+        <span style="font-size:12px;color:var(--muted)">
+          <span style="color:var(--ok);font-weight:700">+${a.cong}đ</span> ·
+          <span style="color:var(--bad)">${a.gay}🥢</span>
+          ${tier?' · '+tier.label:''}
+          ${chronic?' · <b style="color:var(--bad)">Cân nhắc hạnh kiểm</b>':''}
+          ${badges.length?' · 🎁 '+badges.join(', '):''}
+        </span></div>`;
     }).join('');
-    return `<h2 class="section">Tổ ${toNum}</h2><div class="card">${rows || emptyRoster()}</div>`;
+    return `<h2 class="sec">Tổ ${toNum}</h2><div class="card">${rows||emptyRoster()}</div>`;
   }).join('');
 
-  const assignSafe = assign || {};
-  const assignRows = ASSIGNMENT_FIELDS.map(f=>`<div class="row"><span class="name">${f.title}</span><span class="week-sub">${escapeHtml(assignSafe[f.key]||'(chưa có)')}</span></div>`).join('');
+  const asgn=assign||{};
+  const asgnRows=ASSIGNMENT_FIELDS.map(f=>`<div class="row"><span class="name">${f.title}</span><span style="font-size:13px;color:var(--muted)">${escH(asgn[f.key]||'(chưa có)')}</span></div>`).join('');
 
   return `<main>
-    <h2 class="section">Điểm danh ${formatDateVN(state.date)}</h2>
+    <h2 class="sec">Điểm danh ${fmtDate(state.date)}</h2>
     <div class="card">
-      <div class="week-sub">🚫 Vắng: ${absentList.join(', ')||'không có'}</div>
-      <div class="week-sub">⏰ Muộn: ${lateList.join(', ')||'không có'}</div>
-      <div class="week-sub">📱 Thu ĐT: ${att.phoneCount}/${state.roster.length} · Hòm: ${att.openedBox?'đã mở':'chưa mở'} / ${att.closedBox?'đã dọn':'chưa dọn'}</div>
+      <div style="font-size:13px;line-height:1.7">
+        🚫 Vắng: <b>${absentList.join(', ')||'không có'}</b><br>
+        ⏰ Muộn: <b>${lateList.join(', ')||'không có'}</b><br>
+        📱 Thu ĐT: <b>${att.phoneCount}/${state.roster.length}</b> · Hòm: ${att.openedBox?'đã mở':'chưa mở'} / ${att.closedBox?'đã dọn':'chưa dọn'}
+      </div>
     </div>
-    <h2 class="section">Truy bài hôm nay</h2>
+    <h2 class="sec">Truy bài hôm nay</h2>
     <div class="card">
-      ${issueList.length ? issueList.map(x=>`<div class="week-sub">${escapeHtml(x.name)} — ${x.st==='partial'?'thiếu bài':x.st==='none'?'không làm bài':'thiếu dụng cụ'}</div>`).join('') : '<p class="empty">Không có vấn đề gì hôm nay ✓</p>'}
-      <div class="week-sub" style="margin-top:6px;">Đã nhắc BTVN: ${study.remind?'✓':'chưa'}</div>
+      ${issueList.length?issueList.map(x=>`<div style="font-size:13px;padding:4px 0">${escH(x.name)} — ${x.st==='partial'?'thiếu bài':x.st==='none'?'không làm bài':'thiếu dụng cụ'}</div>`).join(''):'<p class="empty" style="padding:8px 0">Không có vấn đề gì hôm nay ✓</p>'}
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Đã nhắc BTVN: ${study.remind?'✓':'chưa'}</div>
     </div>
-    <h2 class="section">Trực nhật hôm nay</h2>
+    <h2 class="sec">Trực nhật hôm nay</h2>
     <div class="card">
-      <div class="week-sub">${dutyNames.join(', ')||'chưa phân công'}</div>
-      <div class="week-sub">Kiểm tra: ${duty && duty.checked==='pass'?'✓ Đạt':duty && duty.checked==='fail'?'✗ Chưa đạt':'chưa kiểm tra'}${duty && duty.note?(' — '+escapeHtml(duty.note)):''}</div>
+      <div style="font-size:13px">${dutyNames.join(', ')||'chưa phân công'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Kiểm tra: ${duty&&duty.checked==='pass'?'✓ Đạt':duty&&duty.checked==='fail'?'✗ Chưa đạt':'chưa kiểm tra'}${duty&&duty.note?' — '+escH(duty.note):''}</div>
     </div>
-    <h2 class="section">Nền nếp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
-    ${disciplineRows}
-    <h2 class="section">Phân công nhiệm vụ</h2>
-    <div class="card">${assignRows}</div>
+    <h2 class="sec">Nền nếp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
+    ${discRows}
+    <h2 class="sec">Phân công nhiệm vụ</h2>
+    <div class="card">${asgnRows}</div>
   </main>`;
 }
 
+// ══ EVENT HANDLERS ════════════════════════════════════════════
 function attachHandlers(){
-  const app = document.getElementById('app');
+  const app=document.getElementById('app');
 
-  app.querySelectorAll('[data-tab]').forEach(btn=>{ btn.onclick = ()=>{ state.tab = btn.dataset.tab; render(); }; });
-  const goLoginBtn = app.querySelector('[data-act="go-login"]');
-  if(goLoginBtn) goLoginBtn.onclick = ()=>{ state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; render(); };
-  app.querySelectorAll('[data-subtab]').forEach(btn=>{
-    btn.onclick = ()=>{
-      const [group,key] = btn.dataset.subtab.split(':');
-      state.sub[group] = key;
-      if(group==='kyluat'){ disciplineForm = {type:'cong', studentId:'', category:''}; }
-      renderAsync();
-    };
-  });
-  const dateInput = document.getElementById('dateInput');
-  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; renderAsync(); };
-  const todayBtn = app.querySelector('[data-act="today"]');
-  if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
-  // (no theme toggle)
-  const monthInput = document.getElementById('monthInput');
-  if(monthInput) monthInput.onchange = ()=>{ state.month = monthInput.value; renderAsync(); };
+  // Tabs
+  app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; renderAsync(); });
+  const goLogin=app.querySelector('[data-act="go-login"]');
+  if(goLogin) goLogin.onclick=()=>{ state.showLogin=true; state.isViewer=false; state.loginSelectedRole=null; render(); };
 
-  const loginBtn = app.querySelector('[data-act="do-login"]');
-  if(loginBtn) loginBtn.onclick = async ()=>{
-    const val = document.getElementById('passcodeInput').value;
-    const role = loginBtn.dataset.role;
-    const ok = await doLogin(role, val);
-    if(ok){ state.unlocked[role] = true; renderAsync(); }
-    else { document.getElementById('loginError').textContent = 'Sai mật khẩu, thử lại.'; }
-  };
-
-  const addStudentBtn = app.querySelector('[data-act="add-student"]');
-  if(addStudentBtn) addStudentBtn.onclick = ()=>{
-    state.roster.push({id:uid(), name:'', to:null});
-    render();
-    const inputs = app.querySelectorAll('.rname');
-    if(inputs.length) inputs[inputs.length-1].focus();
-  };
-  app.querySelectorAll('[data-act="rm-student"]').forEach(btn=>{ btn.onclick = ()=>{ state.roster = state.roster.filter(s=>s.id!==btn.dataset.id); render(); }; });
-  app.querySelectorAll('.rname').forEach((inp,i)=>{ inp.oninput = ()=>{ state.roster[i].name = inp.value; }; });
-  app.querySelectorAll('.select-to').forEach(sel=>{
-    sel.onchange = ()=>{ const s = state.roster.find(x=>x.id===sel.dataset.id); if(s) s.to = sel.value ? parseInt(sel.value) : null; };
-  });
-  const saveRosterBtn = app.querySelector('[data-act="save-roster"]');
-  if(saveRosterBtn) saveRosterBtn.onclick = async ()=>{
-    state.roster = state.roster.filter(s=>s.name.trim()!=='');
-    await saveRoster();
-    showToast('✓ Đã lưu danh sách lớp');
-    render();
-  };
-  const saveAssignBtn = app.querySelector('[data-act="save-assignments"]');
-  if(saveAssignBtn) saveAssignBtn.onclick = async ()=>{
-    const obj = {};
-    app.querySelectorAll('.assign-input').forEach(inp=>{ obj[inp.dataset.key] = inp.value; });
-    await sset('assignments', obj);
-    showToast('✓ Đã lưu phân công');
-  };
-
-  app.querySelectorAll('[data-group="att"]').forEach(seg=>{
-    seg.querySelectorAll('button').forEach(btn=>{
-      btn.onclick = ()=>{ ltData.status[seg.dataset.id] = btn.dataset.val; renderAsync(); sset('attendance:'+state.date, ltData); };
-    });
-  });
-  const phoneInc = app.querySelector('[data-act="phone-inc"]');
-  const phoneDec = app.querySelector('[data-act="phone-dec"]');
-  if(phoneInc) phoneInc.onclick = ()=>{ ltData.phoneCount = Math.min(state.roster.length, (ltData.phoneCount||0)+1); renderAsync(); sset('attendance:'+state.date, ltData); };
-  if(phoneDec) phoneDec.onclick = ()=>{ ltData.phoneCount = Math.max(0, (ltData.phoneCount||0)-1); renderAsync(); sset('attendance:'+state.date, ltData); };
-  const chkOpen = app.querySelector('[data-act="chk-open"]');
-  if(chkOpen) chkOpen.onchange = ()=>{ ltData.openedBox = chkOpen.checked; sset('attendance:'+state.date, ltData); };
-  const chkClose = app.querySelector('[data-act="chk-close"]');
-  if(chkClose) chkClose.onchange = ()=>{ ltData.closedBox = chkClose.checked; sset('attendance:'+state.date, ltData); };
-
-  app.querySelectorAll('[data-group="study"]').forEach(seg=>{
-    seg.querySelectorAll('button').forEach(btn=>{
-      btn.onclick = ()=>{ htData.status[seg.dataset.id] = btn.dataset.val; renderAsync(); sset('study:'+state.date, htData); };
-    });
-  });
-  const chkRemind = app.querySelector('[data-act="chk-remind"]');
-  if(chkRemind) chkRemind.onchange = ()=>{ htData.remind = chkRemind.checked; sset('study:'+state.date, htData); };
-
-  app.querySelectorAll('[data-act="toggle-duty"]').forEach(chk=>{
-    chk.onchange = ()=>{
-      const id = chk.dataset.id;
-      const idx = ldDayData.assigned.indexOf(id);
-      if(idx>=0) ldDayData.assigned.splice(idx,1); else ldDayData.assigned.push(id);
-      sset('duty:'+state.date, ldDayData);
-    };
-  });
-  app.querySelectorAll('[data-group="duty-check"] button').forEach(btn=>{
-    btn.onclick = ()=>{ ldDayData.checked = btn.dataset.val; renderAsync(); sset('duty:'+state.date, ldDayData); };
-  });
-  const saveDutyNoteBtn = app.querySelector('[data-act="save-duty-note"]');
-  if(saveDutyNoteBtn) saveDutyNoteBtn.onclick = async ()=>{
-    ldDayData.note = document.getElementById('dutyNote').value;
-    await sset('duty:'+state.date, ldDayData);
-    showToast('✓ Đã lưu nhận xét trực nhật');
-  };
-  const saveDutyConfigBtn = app.querySelector('[data-act="save-duty-config"]');
-  if(saveDutyConfigBtn) saveDutyConfigBtn.onclick = async ()=>{
-    ldConfig.groupSize = Math.max(1, parseInt(document.getElementById('groupSizeInput').value)||1);
-    ldConfig.startDate = document.getElementById('startDateInput').value || state.date;
-    await sset('duty:config', ldConfig);
-    showToast('✓ Đã lưu cài đặt');
+  // Subtabs
+  app.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{
+    const[g,k]=b.dataset.sub.split(':');
+    state.sub[g]=k;
+    if(g==='kyluat') disciplineForm={type:'cong',studentId:'',category:''};
     renderAsync();
+  });
+
+  // Date
+  const di=document.getElementById('dateInput');
+  if(di) di.onchange=()=>{ state.date=di.value; ltLoadedDate=null; htLoadedDate=null; ldLoadedDate=null; renderAsync(); };
+  const todayBtn=app.querySelector('[data-act="today"]');
+  if(todayBtn) todayBtn.onclick=()=>{ state.date=todayStr(); ltLoadedDate=null; htLoadedDate=null; ldLoadedDate=null; renderAsync(); };
+  const mi=document.getElementById('monthInput');
+  if(mi) mi.onchange=()=>{ state.month=mi.value; renderAsync(); };
+
+  // Lock login
+  const lockBtn=app.querySelector('[data-act="do-lock-login"]');
+  if(lockBtn) lockBtn.onclick=()=>{
+    const val=document.getElementById('lockInput').value;
+    const ok=doLogin(lockBtn.dataset.role, val);
+    if(ok){ state.unlocked[lockBtn.dataset.role]=true; renderAsync(); }
+    else { document.getElementById('lockErr').textContent='Sai mật khẩu, thử lại.'; }
+  };
+  const lockIn=document.getElementById('lockInput');
+  if(lockIn) lockIn.onkeydown=e=>{ if(e.key==='Enter'&&lockBtn) lockBtn.click(); };
+
+  // Roster
+  const addS=app.querySelector('[data-act="add-s"]');
+  if(addS) addS.onclick=()=>{
+    state.roster.push({id:uid(),name:'',to:null}); render();
+    const ins=app.querySelectorAll('.rname'); if(ins.length) ins[ins.length-1].focus();
+  };
+  app.querySelectorAll('[data-act="rm-s"]').forEach(b=>b.onclick=()=>{ state.roster=state.roster.filter(s=>s.id!==b.dataset.id); render(); });
+  app.querySelectorAll('.rname').forEach((inp,i)=>inp.oninput=()=>{ state.roster[i].name=inp.value; });
+  app.querySelectorAll('.sel-to').forEach(s=>s.onchange=()=>{
+    const r=state.roster.find(x=>x.id===s.dataset.id); if(r) r.to=s.value?parseInt(s.value):null;
+  });
+  const saveRoster=app.querySelector('[data-act="save-roster"]');
+  if(saveRoster) saveRoster.onclick=async()=>{
+    state.roster=state.roster.filter(s=>s.name.trim()!=='');
+    saveRoster.textContent='Đang lưu…'; saveRoster.classList.add('saving');
+    const ok=await sset('roster',state.roster);
+    saveRoster.textContent='💾 Lưu danh sách'; saveRoster.classList.remove('saving');
+    if(ok) showToast('✓ Đã lưu danh sách lớp');
+    render();
+  };
+  const saveAssign=app.querySelector('[data-act="save-assign"]');
+  if(saveAssign) saveAssign.onclick=async()=>{
+    const obj={};
+    app.querySelectorAll('.assign-input').forEach(inp=>{ obj[inp.dataset.key]=inp.value; });
+    saveAssign.textContent='Đang lưu…'; saveAssign.classList.add('saving');
+    const ok=await sset('assignments',obj);
+    saveAssign.textContent='💾 Lưu phân công'; saveAssign.classList.remove('saving');
+    if(ok) showToast('✓ Đã lưu phân công');
   };
 
-  app.querySelectorAll('[data-form-type]').forEach(btn=>{
-    btn.onclick = ()=>{ disciplineForm.type = btn.dataset.formType; disciplineForm.category=''; renderAsync(); };
+  // LT — attendance segments (auto-save)
+  app.querySelectorAll('[data-g="att"]').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      ltData.status[seg.dataset.id]=b.dataset.v; renderAsync();
+      // auto-save silently
+      sset('attendance:'+state.date, ltData);
+    });
   });
-  const discStudentSel = document.getElementById('discStudent');
-  if(discStudentSel) discStudentSel.onchange = ()=>{ disciplineForm.studentId = discStudentSel.value; };
-  const discCatSel = document.getElementById('discCategory');
-  if(discCatSel) discCatSel.onchange = ()=>{ disciplineForm.category = discCatSel.value; renderAsync(); };
-  const addDiscBtn = app.querySelector('[data-act="add-disc"]');
-  if(addDiscBtn) addDiscBtn.onclick = async ()=>{
-    const studentId = document.getElementById('discStudent').value;
-    const category = document.getElementById('discCategory').value;
-    const note = document.getElementById('discNote').value.trim();
+  // Phone counter
+  const pInc=app.querySelector('[data-act="phone-inc"]');
+  const pDec=app.querySelector('[data-act="phone-dec"]');
+  if(pInc) pInc.onclick=()=>{ ltData.phoneCount=Math.min(state.roster.length,(ltData.phoneCount||0)+1); renderAsync(); sset('attendance:'+state.date,ltData); };
+  if(pDec) pDec.onclick=()=>{ ltData.phoneCount=Math.max(0,(ltData.phoneCount||0)-1); renderAsync(); sset('attendance:'+state.date,ltData); };
+  const chkOpen=app.querySelector('[data-act="chk-open"]');
+  if(chkOpen) chkOpen.onchange=()=>{ ltData.openedBox=chkOpen.checked; sset('attendance:'+state.date,ltData); };
+  const chkClose=app.querySelector('[data-act="chk-close"]');
+  if(chkClose) chkClose.onchange=()=>{ ltData.closedBox=chkClose.checked; sset('attendance:'+state.date,ltData); };
+  // Explicit save LT
+  const saveLT=app.querySelector('[data-act="save-lt"]');
+  if(saveLT) saveLT.onclick=async()=>{
+    saveLT.textContent='Đang lưu…'; saveLT.classList.add('saving');
+    const ok=await sset('attendance:'+state.date,ltData);
+    saveLT.textContent='💾 Lưu điểm danh hôm nay'; saveLT.classList.remove('saving');
+    if(ok) showToast('✓ Đã lưu điểm danh');
+  };
+
+  // Study segments (auto-save)
+  app.querySelectorAll('[data-g="study"]').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      htData.status[seg.dataset.id]=b.dataset.v; renderAsync();
+      sset('study:'+state.date,htData);
+    });
+  });
+  const chkRemind=app.querySelector('[data-act="chk-remind"]');
+  if(chkRemind) chkRemind.onchange=()=>{ htData.remind=chkRemind.checked; sset('study:'+state.date,htData); };
+  const saveHT=app.querySelector('[data-act="save-ht"]');
+  if(saveHT) saveHT.onclick=async()=>{
+    saveHT.textContent='Đang lưu…'; saveHT.classList.add('saving');
+    const ok=await sset('study:'+state.date,htData);
+    saveHT.textContent='💾 Lưu kết quả học tập'; saveHT.classList.remove('saving');
+    if(ok) showToast('✓ Đã lưu học tập');
+  };
+
+  // Duty
+  app.querySelectorAll('[data-act="toggle-duty"]').forEach(chk=>{
+    chk.onchange=()=>{
+      const id=chk.dataset.id; const idx=ldDayData.assigned.indexOf(id);
+      if(idx>=0) ldDayData.assigned.splice(idx,1); else ldDayData.assigned.push(id);
+      sset('duty:'+state.date,ldDayData);
+    };
+  });
+  app.querySelectorAll('[data-g="duty-check"] button').forEach(b=>{
+    b.onclick=()=>{ ldDayData.checked=b.dataset.v; renderAsync(); sset('duty:'+state.date,ldDayData); };
+  });
+  const saveDuty=app.querySelector('[data-act="save-duty"]');
+  if(saveDuty) saveDuty.onclick=async()=>{
+    const note=document.getElementById('dutyNote')?.value||'';
+    ldDayData.note=note;
+    saveDuty.textContent='Đang lưu…'; saveDuty.classList.add('saving');
+    const ok=await sset('duty:'+state.date,ldDayData);
+    saveDuty.textContent='💾 Lưu kết quả trực nhật'; saveDuty.classList.remove('saving');
+    if(ok) showToast('✓ Đã lưu trực nhật');
+  };
+  const saveDutyConfig=app.querySelector('[data-act="save-duty-config"]');
+  if(saveDutyConfig) saveDutyConfig.onclick=async()=>{
+    ldConfig.groupSize=Math.max(1,parseInt(document.getElementById('groupSizeInput').value)||1);
+    ldConfig.startDate=document.getElementById('startDateInput').value||state.date;
+    saveDutyConfig.textContent='Đang lưu…'; saveDutyConfig.classList.add('saving');
+    const ok=await sset('duty:config',ldConfig);
+    saveDutyConfig.textContent='💾 Lưu cài đặt'; saveDutyConfig.classList.remove('saving');
+    if(ok){ showToast('✓ Đã lưu cài đặt'); renderAsync(); }
+  };
+
+  // Discipline form type
+  app.querySelectorAll('[data-ft]').forEach(b=>b.onclick=()=>{ disciplineForm.type=b.dataset.ft; disciplineForm.category=''; renderAsync(); });
+  const dStu=document.getElementById('discStu');
+  if(dStu) dStu.onchange=()=>{ disciplineForm.studentId=dStu.value; };
+  const dCat=document.getElementById('discCat');
+  if(dCat) dCat.onchange=()=>{ disciplineForm.category=dCat.value; renderAsync(); };
+  const addDisc=app.querySelector('[data-act="add-disc"]');
+  if(addDisc) addDisc.onclick=async()=>{
+    const studentId=document.getElementById('discStu').value;
+    const category=document.getElementById('discCat').value;
+    const note=(document.getElementById('discNote')?.value||'').trim();
     if(!studentId){ showToast('Chọn học sinh trước đã'); return; }
     let value;
-    if(category === 'Khác'){
-      value = parseInt(document.getElementById('discCustomValue').value);
+    if(category==='Khác'){
+      value=parseInt(document.getElementById('discCustomVal')?.value||'');
       if(isNaN(value)){ showToast('Nhập số điểm/gậy hợp lệ'); return; }
     } else {
-      const list = disciplineForm.type==='cong' ? CONG_CATEGORIES : VIPHAM_CATEGORIES;
-      const found = list.find(c=>c.label===category);
-      value = disciplineForm.type==='cong' ? found.pts : found.gay;
+      const list=disciplineForm.type==='cong'?CONG_CATEGORIES:VIPHAM_CATEGORIES;
+      const found=list.find(c=>c.label===category);
+      if(!found){ showToast('Chọn danh mục trước'); return; }
+      value=disciplineForm.type==='cong'?found.pts:found.gay;
     }
-    const entryMonth = monthOf(state.date);
-    const log = await getMonthLog(entryMonth);
-    log.push({id:uid(), studentId, type:disciplineForm.type, category, value, note, date: state.date});
-    await sset('discipline:log:'+entryMonth, log);
-    showToast('✓ Đã lưu ghi nhận');
-    disciplineForm.studentId=''; disciplineForm.category='';
-    renderAsync();
+    const entryMonth=state.date.slice(0,7);
+    const log=await sget('discipline:log:'+entryMonth)||[];
+    log.push({id:uid(),studentId,type:disciplineForm.type,category,value,note,date:state.date});
+    addDisc.textContent='Đang lưu…'; addDisc.classList.add('saving');
+    const ok=await sset('discipline:log:'+entryMonth,log);
+    addDisc.textContent='💾 Lưu ghi nhận'; addDisc.classList.remove('saving');
+    if(ok){ showToast('✓ Đã lưu ghi nhận'); disciplineForm.studentId=''; disciplineForm.category=''; renderAsync(); }
   };
 }
 
+// ══ GO ═══════════════════════════════════════════════════════
 init();
 </script>
 </body>
