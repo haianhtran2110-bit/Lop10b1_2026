@@ -3,107 +3,222 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Sổ quản lý lớp 10B1</title>
+<title>Lớp 10B1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --paper:#F7F3E8;
-    --paper-line:rgba(31,42,68,0.10);
-    --ink:#1F2A44;
-    --ink-soft:#5B6580;
-    --ok:#3A7D44;
-    --warn:#A9791F;
-    --bad:#B23A2E;
-    --info:#5B6580;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Be Vietnam Pro',system-ui,sans-serif;
-    color:var(--ink);
-    background:
-      repeating-linear-gradient(var(--paper), var(--paper) 27px, var(--paper-line) 28px),
-      var(--paper);
-    min-height:100vh;
-  }
-  .app{max-width:520px;margin:0 auto;padding-bottom:84px;}
-  .cover{padding:22px 18px 16px;color:#fff;transition:background .25s ease;}
-  .cover .role-label{font-size:12px;letter-spacing:.02em;opacity:.85;margin:0 0 2px;}
-  .cover h1{margin:0;font-size:22px;font-weight:800;}
-  .cover .sub{margin:4px 0 0;font-size:13px;opacity:.9;}
-  .datebar{
-    display:flex;align-items:center;gap:8px;
-    padding:10px 18px;background:rgba(255,255,255,0.55);
-    border-bottom:1px solid var(--paper-line);
-    position:sticky;top:0;backdrop-filter:blur(4px);z-index:5;
-  }
-  .datebar input[type=date]{
-    font-family:inherit;font-size:14px;border:1px solid var(--paper-line);
-    background:#fff;border-radius:8px;padding:6px 8px;color:var(--ink);
-  }
-  .datebar .today-btn{
-    font-size:12px;background:#fff;border:1px solid var(--paper-line);
-    border-radius:8px;padding:6px 10px;color:var(--ink-soft);
-  }
-  main{padding:14px 16px 6px;}
-  h2.section{font-size:15px;font-weight:700;margin:18px 0 8px;color:var(--ink);}
-  h2.section input[type=month]{font-size:13px;border:1px solid var(--paper-line);border-radius:6px;padding:4px 6px;font-family:inherit;margin-left:6px;}
-  .card{background:#fff;border-radius:10px;border:1px solid var(--paper-line);padding:12px;margin-bottom:10px;}
-  .row{display:flex;align-items:center;gap:10px;padding:8px 0;flex-wrap:wrap;}
-  .row + .row{border-top:1px solid var(--paper-line);}
-  .name{flex:1;font-size:15px;font-weight:500;}
-  .name.full-w{flex-basis:100%;}
-  .idx{width:20px;font-size:12px;color:var(--ink-soft);}
-  .seg{display:flex;border:1px solid var(--paper-line);border-radius:8px;overflow:hidden;}
-  .seg button{border:none;background:#fff;padding:6px 10px;font-size:12.5px;font-family:inherit;color:var(--ink-soft);cursor:pointer;white-space:nowrap;}
-  .seg button + button{border-left:1px solid var(--paper-line);}
-  .seg button.on-ok{background:var(--ok);color:#fff;}
-  .seg button.on-warn{background:var(--warn);color:#fff;}
-  .seg button.on-bad{background:var(--bad);color:#fff;}
-  .seg button.on-info{background:var(--info);color:#fff;}
-  .seg.seg4{width:100%;}
-  .seg.seg4 button{flex:1;font-size:11px;padding:7px 2px;text-align:center;}
-  .note-input{width:100%;margin-top:6px;font-family:inherit;font-size:13px;border:1px solid var(--paper-line);border-radius:6px;padding:6px 8px;background:#FCFAF4;}
-  textarea.note-input{resize:vertical;}
-  .stat-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-  .pill{background:#fff;border:1px solid var(--paper-line);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--ink-soft);}
-  .pill b{color:var(--ink);}
-  .counter-card{display:flex;align-items:center;justify-content:space-between;}
-  .counter-num{font-size:28px;font-weight:800;}
-  .counter-num.ok{color:var(--ok);}
-  .counter-btns{display:flex;gap:8px;}
-  .counter-btns button{width:38px;height:38px;border-radius:8px;border:1px solid var(--paper-line);background:#fff;font-size:18px;color:var(--ink);}
-  .check-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;}
-  .check-row input{width:20px;height:20px;}
-  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--paper-line);max-width:520px;margin:0 auto;}
-  .tabbar button{flex:1;border:none;background:none;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;color:var(--ink-soft);font-size:10.5px;}
-  .tabbar button .dot{width:8px;height:8px;border-radius:50%;background:var(--paper-line);}
-  .tabbar button.active{color:var(--ink);font-weight:700;}
-  .tabbar button.active .dot{background:var(--role-color,var(--ink));}
-  .subtab{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
-  .subtab button{font-family:inherit;font-size:12.5px;padding:7px 12px;border-radius:8px;border:1px solid var(--paper-line);background:#fff;color:var(--ink-soft);}
-  .subtab button.active{background:var(--role-color);color:#fff;border-color:var(--role-color);}
-  .roster-edit-row{display:flex;gap:6px;align-items:center;padding:6px 0;}
-  .roster-edit-row input[type=text]{flex:1;font-family:inherit;font-size:14px;border:1px solid var(--paper-line);border-radius:6px;padding:7px 8px;background:#FCFAF4;}
-  .rm-btn{border:none;background:none;color:var(--bad);font-size:18px;padding:4px 6px;}
-  .add-btn,.primary-btn{width:100%;padding:11px;border-radius:8px;border:none;background:var(--ink);color:#fff;font-family:inherit;font-weight:600;font-size:14px;margin-top:6px;}
-  .primary-btn.role{background:var(--role-color);}
-  .empty{text-align:center;color:var(--ink-soft);font-size:13px;padding:24px 8px;}
-  .badge-flag{display:inline-block;margin-top:6px;font-size:11px;background:#F6E4E1;color:var(--bad);border-radius:6px;padding:2px 6px;font-weight:700;}
-  .week-name{font-weight:600;font-size:14px;}
-  .week-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
-  .bar-wrap{background:var(--paper-line);border-radius:4px;height:6px;margin-top:6px;overflow:hidden;}
-  .bar-fill{height:100%;background:var(--warn);}
-  .disc-entry{padding:8px 0;border-top:1px solid var(--paper-line);font-size:13px;}
-  .disc-entry:first-child{border-top:none;}
-  .disc-pts{font-weight:800;white-space:nowrap;}
-  .disc-pts.pos{color:var(--ok);}
-  .disc-pts.neg{color:var(--bad);}
-  select,.sel{font-family:inherit;font-size:13.5px;border:1px solid var(--paper-line);border-radius:8px;padding:7px 8px;background:#fff;color:var(--ink);width:100%;}
-  label.field-label{font-size:12px;color:var(--ink-soft);display:block;margin:8px 0 3px;}
-  .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:20px;font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:20;}
-  .toast.show{opacity:1;}
+:root{
+  --bg:#0A0A0A;
+  --surf:#141414;
+  --surf2:#1E1E1E;
+  --border:rgba(255,255,255,0.08);
+  --text:#FFFFFF;
+  --muted:#888;
+  --red:#FE2C55;
+  --teal:#25F4EE;
+  --amber:#FFB800;
+  --ok:#25F4EE;
+  --warn:#FFB800;
+  --bad:#FE2C55;
+  --info:#666;
+  --role-color:var(--red);
+  --radius:14px;
+}
+:root.light{
+  --bg:#F5F5F5;
+  --surf:#FFFFFF;
+  --surf2:#EFEFEF;
+  --border:rgba(0,0,0,0.09);
+  --text:#111111;
+  --muted:#777;
+  --ok:#0CBBA8;
+  --warn:#D48800;
+  --bad:#E0203F;
+  --info:#888;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  margin:0;
+  font-family:'Be Vietnam Pro',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.app{max-width:480px;margin:0 auto;padding-bottom:88px;min-height:100vh;}
+
+/* COVER */
+.cover{
+  padding:52px 20px 22px;
+  position:relative;overflow:hidden;
+}
+.cover::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg, var(--role-color) 0%, color-mix(in srgb, var(--role-color) 60%, #000) 100%);
+  opacity:.18;pointer-events:none;
+}
+.cover::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg, transparent, var(--role-color), transparent);
+  opacity:.4;
+}
+.cover .eyebrow{font-size:10px;letter-spacing:.12em;font-weight:700;color:var(--role-color);text-transform:uppercase;margin:0 0 6px;}
+.cover h1{margin:0;font-size:26px;font-weight:900;line-height:1.15;letter-spacing:-.01em;}
+.cover .sub{margin:5px 0 0;font-size:13px;color:var(--muted);}
+
+/* DATE BAR */
+.datebar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;background:var(--surf);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);
+}
+.datebar input[type=date]{
+  font-family:inherit;font-size:13px;border:1px solid var(--border);
+  background:var(--surf2);border-radius:10px;padding:7px 10px;color:var(--text);flex:1;
+}
+.datebar input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.5;}
+.datebar .today-btn{
+  font-size:12px;font-family:inherit;font-weight:600;
+  background:var(--surf2);border:1px solid var(--border);
+  border-radius:10px;padding:7px 12px;color:var(--muted);white-space:nowrap;cursor:pointer;
+}
+
+/* MAIN */
+main{padding:16px 16px 8px;}
+h2.section{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px;}
+h2.section input[type=month]{font-family:inherit;font-size:12px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:var(--surf2);color:var(--text);margin-left:8px;letter-spacing:0;}
+
+/* CARD */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+
+/* ROW */
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;flex-wrap:wrap;}
+.row+.row{border-top:1px solid var(--border);}
+.name{flex:1;font-size:14px;font-weight:500;}
+.name.full-w{flex-basis:100%;}
+.idx{width:22px;font-size:11px;color:var(--muted);font-weight:600;text-align:right;}
+
+/* SEGMENTED */
+.seg{display:flex;background:var(--surf2);border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+.seg button{border:none;background:none;padding:8px 10px;font-size:12px;font-family:inherit;font-weight:600;color:var(--muted);cursor:pointer;flex:1;transition:background .15s,color .15s;white-space:nowrap;}
+.seg button+button{border-left:1px solid var(--border);}
+.seg button.on-ok{background:var(--ok);color:#000;}
+.seg button.on-warn{background:var(--warn);color:#000;}
+.seg button.on-bad{background:var(--bad);color:#fff;}
+.seg button.on-info{background:var(--surf);color:var(--muted);border-color:var(--muted);}
+.seg.seg4{width:100%;}
+.seg.seg4 button{font-size:11px;padding:8px 4px;}
+
+/* INPUTS */
+.note-input{width:100%;margin-top:6px;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surf2);color:var(--text);}
+.note-input::placeholder{color:var(--muted);}
+textarea.note-input{resize:vertical;}
+
+/* PILLS */
+.stat-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.pill{background:var(--surf);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--muted);}
+.pill b{color:var(--text);}
+
+/* COUNTER */
+.counter-card{display:flex;align-items:center;justify-content:space-between;}
+.counter-num{font-size:44px;font-weight:900;line-height:1;letter-spacing:-.03em;}
+.counter-num.ok{color:var(--ok);}
+.counter-btns{display:flex;gap:8px;}
+.counter-btns button{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:var(--surf2);font-size:20px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* CHECK ROW */
+.check-row{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:14px;cursor:pointer;}
+.check-row input[type=checkbox]{width:22px;height:22px;accent-color:var(--red);flex-shrink:0;}
+
+/* TABBAR */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;display:flex;
+  background:rgba(10,10,10,.92);border-top:1px solid var(--border);
+  backdrop-filter:blur(20px);max-width:480px;margin:0 auto;
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+.tabbar button{flex:1;border:none;background:none;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;color:var(--muted);font-size:9.5px;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:color .15s;}
+.tabbar button .ticon{font-size:19px;line-height:1;transition:transform .15s;}
+.tabbar button.active{color:var(--role-color);}
+.tabbar button.active .ticon{transform:scale(1.18);}
+
+/* SUBTABS */
+.subtab{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.subtab button{font-family:inherit;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surf2);color:var(--muted);cursor:pointer;transition:all .15s;}
+.subtab button.active{background:var(--role-color);color:#fff;border-color:var(--role-color);}
+
+/* ROSTER EDIT */
+.roster-edit-row{display:flex;gap:8px;align-items:center;padding:7px 0;}
+.roster-edit-row+.roster-edit-row{border-top:1px solid var(--border);}
+.roster-edit-row input[type=text]{flex:1;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:var(--surf2);color:var(--text);}
+.roster-edit-row input[type=text]::placeholder{color:var(--muted);}
+.rm-btn{border:none;background:none;color:var(--bad);font-size:18px;padding:4px 6px;cursor:pointer;}
+.select-to{font-family:inherit;font-size:12px;border:1px solid var(--border);border-radius:8px;padding:7px 8px;background:var(--surf2);color:var(--text);width:74px;flex:none;}
+
+/* BUTTONS */
+.add-btn,.primary-btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:inherit;font-weight:700;font-size:14px;margin-top:8px;cursor:pointer;transition:opacity .15s;}
+.add-btn{background:var(--surf2);color:var(--muted);border:1px dashed var(--border);}
+.primary-btn{background:var(--role-color);color:#fff;}
+
+/* MISC */
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:28px 8px;}
+.badge-flag{display:inline-block;margin-top:6px;font-size:11px;font-weight:700;background:rgba(254,44,85,.15);color:var(--red);border:1px solid rgba(254,44,85,.3);border-radius:6px;padding:3px 8px;}
+.week-name{font-weight:700;font-size:14px;}
+.week-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.bar-wrap{background:var(--surf2);border-radius:4px;height:4px;margin-top:8px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;}
+.week-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;}
+
+/* DISCIPLINE */
+.disc-entry{padding:10px 0;border-top:1px solid var(--border);font-size:13px;}
+.disc-entry:first-child{border-top:none;}
+.disc-pts{font-weight:900;font-size:15px;white-space:nowrap;}
+.disc-pts.pos{color:var(--teal);}
+.disc-pts.neg{color:var(--red);}
+.disc-summary{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.score-block{text-align:center;}
+.score-block .score-num{font-size:32px;font-weight:900;line-height:1;}
+.score-block .score-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+
+/* SELECT */
+select,.sel{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:var(--surf2);color:var(--text);width:100%;-webkit-appearance:none;}
+label.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin:12px 0 4px;}
+
+/* LOCK */
+.lock-screen{margin:40px 0;text-align:center;padding:0 8px;}
+.lock-screen .lock-icon{font-size:48px;margin-bottom:14px;}
+.lock-screen h3{font-size:20px;font-weight:800;margin:0 0 6px;}
+.lock-screen p{color:var(--muted);font-size:13px;margin:0 0 20px;}
+.lock-screen input{width:100%;font-family:inherit;font-size:15px;font-weight:700;background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text);text-align:center;letter-spacing:.2em;margin-bottom:10px;}
+.lock-screen input::placeholder{color:var(--muted);letter-spacing:.02em;font-weight:400;font-size:13px;}
+#loginError{color:var(--red);font-size:12px;margin-top:4px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surf);color:var(--text);padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--border);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:100;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.loading-screen{display:flex;align-items:center;justify-content:center;height:100vh;color:var(--muted);font-size:14px;}
+
+/* LOGIN SPLASH */
+.login-splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px 40px;}
+.login-splash .brand{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.login-splash h1{font-size:28px;font-weight:900;margin:0 0 4px;letter-spacing:-.02em;}
+.login-splash .tagline{color:var(--muted);font-size:13px;margin:0 0 36px;text-align:center;}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:340px;margin-bottom:12px;}
+.role-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;}
+.role-card:active{background:var(--surf2);}
+.role-card .rc-icon{font-size:26px;line-height:1;}
+.role-card .rc-label{font-size:12px;font-weight:700;text-align:center;letter-spacing:.02em;}
+.role-card.selected{border-color:var(--sel-color,var(--red));background:color-mix(in srgb, var(--sel-color,var(--red)) 12%, var(--surf));}
+.viewer-btn{width:100%;max-width:340px;padding:13px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;}
+.login-pass-box{width:100%;max-width:340px;background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;margin-bottom:12px;animation:slideUp .18s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.login-pass-box .lp-title{font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:6px;}
+.login-pass-box input{width:100%;font-family:inherit;font-size:15px;font-weight:700;background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);text-align:center;letter-spacing:.2em;margin-bottom:10px;}
+.login-pass-box input::placeholder{color:var(--muted);letter-spacing:.02em;font-weight:400;font-size:13px;}
+.login-pass-box .lp-err{color:var(--red);font-size:12px;margin-bottom:8px;min-height:18px;}
+.login-pass-box .lp-submit{width:100%;padding:13px;border-radius:10px;border:none;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;}
 </style>
 </head>
 <body>
@@ -112,13 +227,16 @@
 
 <script>
 const ROLE_META = {
-  home:{label:'Danh sách lớp', short:'Lớp', color:'#1F2A44'},
-  lt:{label:'Lớp trưởng', short:'Lớp trưởng', color:'#B23A2E'},
-  hoctap:{label:'LP Học tập', short:'Học tập', color:'#2E5FA3'},
-  laodong:{label:'LP Lao động', short:'Lao động', color:'#3A7D44'},
-  kyluat:{label:'Kỷ luật', short:'Kỷ luật', color:'#A9791F'},
-  gvcn:{label:'GVCN', short:'GVCN', color:'#5B4B8A'},
+  public:{label:'Báo cáo', short:'Báo cáo', icon:'📊', color:'#FE2C55'},
+  home:{label:'Danh sách lớp', short:'Lớp', icon:'👥', color:'#FE2C55'},
+  lt:{label:'Lớp trưởng', short:'LT', icon:'⭐', color:'#FE2C55'},
+  hoctap:{label:'LP Học tập', short:'Học tập', icon:'📚', color:'#25F4EE'},
+  laodong:{label:'LP Lao động', short:'Lao động', icon:'🧹', color:'#25D366'},
+  kyluat:{label:'Kỷ luật', short:'Kỷ luật', icon:'🥢', color:'#FFB800'},
+  gvcn:{label:'GVCN', short:'GVCN', icon:'👩‍🏫', color:'#B983FF'},
 };
+// Tabs visible in viewer (no-login) mode
+const PUBLIC_TABS = ['public'];
 const ROLE_LOGIN_KEY = { lt:'lop-truong', hoctap:'hoc-tap', laodong:'lao-dong', gvcn:'gvcn' };
 
 const CONG_CATEGORIES = [
@@ -158,7 +276,7 @@ const ASSIGNMENT_FIELDS = [
   {key:'lp_lao_dong', title:'Lớp phó lao động', desc:'Phân công & kiểm tra trực nhật, quản lý cơ sở vật chất lớp.'},
   {key:'lp_van_the_my', title:'Lớp phó văn thể mỹ', desc:'Phụ trách hoạt động văn nghệ, thể thao, phong trào, trang trí lớp.'},
   {key:'lp_doi_ngoai', title:'Lớp phó đối ngoại', desc:'Đầu mối liên lạc, đối ngoại của lớp với các bên liên quan.'},
-  {key:'bi_thu', title:'Bí thư', desc:'Phụ trách công tác Đoàn, sinh hoạt Đoàn định kỳ. (Chưa bầu — chờ đại hội)'},
+  {key:'bi_thu', title:'Bí thư', desc:'Phụ trách công tác Đoàn, sinh hoạt Đoàn định kỳ.'},
   {key:'to_truong_1', title:'Tổ trưởng Tổ 1', desc:'Theo dõi nền nếp, ghi nhận điểm cộng/vi phạm cho các bạn Tổ 1.'},
   {key:'to_truong_2', title:'Tổ trưởng Tổ 2', desc:'Theo dõi nền nếp, ghi nhận điểm cộng/vi phạm cho các bạn Tổ 2.'},
   {key:'to_truong_3', title:'Tổ trưởng Tổ 3', desc:'Theo dõi nền nếp, ghi nhận điểm cộng/vi phạm cho các bạn Tổ 3.'},
@@ -172,6 +290,9 @@ let state = {
   loading: true,
   sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
   unlocked: {},
+  showLogin: true,
+  loginSelectedRole: null,
+  isViewer: false,
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
 let ldDayData = null, ltData = null, htData = null, ldConfig = null;
@@ -183,13 +304,13 @@ function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(showToast._h);
-  showToast._h = setTimeout(()=>t.classList.remove('show'), 1400);
+  showToast._h = setTimeout(()=>t.classList.remove('show'), 1600);
 }
 
-// ====== CẤU HÌNH KHO DỮ LIỆU (Google Sheets qua Apps Script) ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbykQfvYnE7ERzNQqz6kQI01ZjDSgjZAZvrVaTxDStSzvSy2lQFSppveNRxHtltP8oTKKQ/exec';
+// ====== CẤU HÌNH KHO DỮ LIỆU ======
+const API_URL = 'https://script.google.com/macros/s/AKfycbzwTYLdRTPy_LbzoidE0cb3VQ2UroDAMKoOj_MUJNgCXnsDtJL12UvoHSwaZgZq1GSX/exec';
 const API_TOKEN = 'Lop10b1@2026';
-// ====================================================================
+// ====================================
 
 async function sget(key){
   try{
@@ -204,7 +325,7 @@ async function sset(key, value){
   try{
     await fetch(API_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ action:'set', key, value: JSON.stringify(value), token: API_TOKEN }) });
     return true;
-  } catch(e){ console.error('sset failed', key, e); showToast('Lỗi lưu dữ liệu — kiểm tra kết nối mạng'); return false; }
+  } catch(e){ console.error('sset failed', key, e); showToast('Lỗi lưu dữ liệu'); return false; }
 }
 async function doLogin(role, passcode){
   try{
@@ -221,9 +342,10 @@ async function saveRoster(){ await sset('roster', state.roster); }
 async function init(){
   if(!API_URL || API_URL.indexOf('DÁN_URL') === 0){
     document.getElementById('app').innerHTML = `
-      <div style="padding:32px 20px;text-align:center;color:#1F2A44;">
-        <h2 style="margin-bottom:8px;">Chưa gắn kho dữ liệu</h2>
-        <p style="color:#5B6580;font-size:14px;">Tìm dòng <code>API_URL</code> gần đầu file &lt;script&gt; và dán URL Web App Apps Script vào, rồi tải lại trang.</p>
+      <div style="padding:80px 24px;text-align:center;">
+        <div style="font-size:52px;margin-bottom:16px;">🔗</div>
+        <h2 style="margin:0 0 8px;font-size:20px;">Chưa gắn kho dữ liệu</h2>
+        <p style="color:#888;font-size:13px;line-height:1.6;">Tìm dòng <code style="background:#1E1E1E;padding:2px 6px;border-radius:4px;">API_URL</code> trong file và dán URL Apps Script Web App vào.</p>
       </div>`;
     return;
   }
@@ -233,63 +355,175 @@ async function init(){
 }
 
 function render(){
-  if(state.loading){ document.getElementById('app').innerHTML = '<div style="padding:40px;text-align:center;color:#5B6580;">Đang tải…</div>'; return; }
+  if(state.loading){ document.getElementById('app').innerHTML = '<div class="loading-screen">Đang tải…</div>'; return; }
+  if(state.showLogin){ renderLoginScreen(); return; }
   renderAsync();
 }
 
-function cover(title, sub, bg, showDate){
+const LOGIN_ROLES = [
+  {key:'lop-truong', tab:'lt', label:'Lớp trưởng', icon:'⭐', color:'#FE2C55'},
+  {key:'hoc-tap', tab:'hoctap', label:'LP Học tập', icon:'📚', color:'#25F4EE'},
+  {key:'lao-dong', tab:'laodong', label:'LP Lao động', icon:'🧹', color:'#25D366'},
+  {key:'to-1', tab:'kyluat', label:'Tổ trưởng 1', icon:'1️⃣', color:'#FFB800'},
+  {key:'to-2', tab:'kyluat', label:'Tổ trưởng 2', icon:'2️⃣', color:'#FFB800'},
+  {key:'to-3', tab:'kyluat', label:'Tổ trưởng 3', icon:'3️⃣', color:'#FFB800'},
+  {key:'gvcn', tab:'home', label:'GVCN', icon:'👩‍🏫', color:'#B983FF'},
+];
+
+function renderLoginScreen(){
+  const app = document.getElementById('app');
+  const sel = state.loginSelectedRole;
+  const roleCards = LOGIN_ROLES.map(r=>`
+    <button class="role-card${sel&&sel.key===r.key?' selected':''}" data-login-role="${r.key}" style="--sel-color:${r.color}">
+      <span class="rc-icon">${r.icon}</span>
+      <span class="rc-label">${r.label}</span>
+    </button>`).join('');
+
+  const passBox = sel ? `
+    <div class="login-pass-box" id="loginPassBox">
+      <p class="lp-title"><span>${sel.icon}</span> ${sel.label}</p>
+      <input type="password" id="splashPass" placeholder="Mật khẩu được cấp…" autocomplete="current-password">
+      <p class="lp-err" id="splashErr"></p>
+      <button class="lp-submit" id="splashSubmit" style="background:${sel.color};color:${['#25F4EE','#25D366','#FFB800'].includes(sel.color)?'#000':'#fff'}">Mở khoá →</button>
+    </div>` : '';
+
+  const isLight = document.documentElement.classList.contains('light');
+  app.innerHTML = `
+    <div class="login-splash">
+      <button id="splashTheme" style="position:absolute;top:16px;right:16px;background:var(--surf2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:15px;cursor:pointer;">${isLight?'🌙':'☀️'}</button>
+      <p class="brand">Lớp 10B1 · Marie Curie</p>
+      <h1>Xin chào 👋</h1>
+      <p class="tagline">Chọn vai trò của bạn để tiếp tục</p>
+      <div class="role-grid">${roleCards}</div>
+      ${passBox}
+      <button class="viewer-btn" id="viewerBtn">Xem không cần đăng nhập</button>
+    </div>`;
+
+  // Theme toggle on splash
+  const splashThemeBtn = document.getElementById('splashTheme');
+  if(splashThemeBtn) splashThemeBtn.onclick = ()=>{ document.documentElement.classList.toggle('light'); renderLoginScreen(); };
+
+  // Role card click
+  app.querySelectorAll('[data-login-role]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const key = btn.dataset.loginRole;
+      state.loginSelectedRole = LOGIN_ROLES.find(r=>r.key===key) || null;
+      renderLoginScreen();
+      setTimeout(()=>{ const p=document.getElementById('splashPass'); if(p) p.focus(); },50);
+    };
+  });
+
+  // Submit
+  const submitBtn = document.getElementById('splashSubmit');
+  if(submitBtn) submitBtn.onclick = async ()=>{
+    const pass = document.getElementById('splashPass').value;
+    const errEl = document.getElementById('splashErr');
+    submitBtn.disabled = true; submitBtn.textContent = 'Đang kiểm tra…';
+    const ok = await doLogin(sel.key, pass);
+    submitBtn.disabled = false; submitBtn.textContent = 'Mở khoá →';
+    if(ok){
+      state.unlocked[sel.key] = true;
+      // For kyluat tab, also set the right sub-tổ
+      if(sel.tab === 'kyluat'){
+        state.sub.kyluat = sel.key;
+      }
+      state.tab = sel.tab;
+      state.showLogin = false;
+      state.loginSelectedRole = null;
+      render();
+    } else {
+      errEl.textContent = 'Sai mật khẩu, thử lại.';
+      document.getElementById('splashPass').value = '';
+      document.getElementById('splashPass').focus();
+    }
+  };
+  // Enter key on password
+  const passInput = document.getElementById('splashPass');
+  if(passInput) passInput.onkeydown = e=>{ if(e.key==='Enter' && submitBtn) submitBtn.click(); };
+
+  // Viewer (no login) button
+  document.getElementById('viewerBtn').onclick = ()=>{
+    state.showLogin = false;
+    state.isViewer = true;
+    state.tab = 'public';
+    render();
+  };
+}
+
+function cover(title, sub, color, showDate){
+  const isLight = document.documentElement.classList.contains('light');
   const dateBar = showDate ? `
     <div class="datebar">
       <input type="date" id="dateInput" value="${state.date}">
       <button class="today-btn" data-act="today">Hôm nay</button>
     </div>` : '';
-  return `<div class="cover" style="background:${bg}"><p class="role-label">SỔ QUẢN LÝ LỚP 10B1</p><h1>${title}</h1><p class="sub">${sub}</p></div>${dateBar}`;
+  return `<div class="cover" style="--role-color:${color}">
+    <p class="eyebrow">SỔ QUẢN LÝ · LỚP 10B1</p>
+    <h1>${title}</h1>
+    <p class="sub">${sub}</p>
+    <button data-act="toggle-theme" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;border-radius:20px;padding:5px 11px;font-size:15px;cursor:pointer;line-height:1;">${isLight?'🌙':'☀️'}</button>
+  </div>${dateBar}`;
 }
+
 function tabbar(){
-  return `<div class="tabbar">${Object.entries(ROLE_META).map(([key,r])=>`
-    <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}"><span class="dot"></span>${r.short}</button>
-  `).join('')}</div>`;
+  const entries = state.isViewer
+    ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
+    : Object.entries(ROLE_META).filter(([k])=>k!=='public');
+  const loginBtn = state.isViewer
+    ? `<button data-act="go-login" style="flex:none;padding:10px 14px;border:none;background:none;font-family:inherit;font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:.02em;cursor:pointer;">🔑 Đăng<br>nhập</button>`
+    : '';
+  return `<div class="tabbar">${entries.map(([key,r])=>`
+    <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
+      <span class="ticon">${r.icon}</span>${r.short}
+    </button>
+  `).join('')}${loginBtn}</div>`;
 }
+
 function subtabs(group, items){
   const color = ROLE_META[state.tab].color;
   return `<div class="subtab">${items.map(([key,label])=>
     `<button data-subtab="${group}:${key}" class="${state.sub[group]===key?'active':''}" style="--role-color:${color}">${label}</button>`
   ).join('')}</div>`;
 }
+
 function lockBody(label, color, roleKey){
-  return `<div class="card" style="text-align:center;padding:28px 16px;">
-    <p style="font-weight:700;margin-bottom:4px;">${label} cần mật khẩu</p>
-    <p class="week-sub" style="margin-bottom:14px;">Nhập mật khẩu được cấp để mở trang này.</p>
-    <input type="password" class="note-input" id="passcodeInput" placeholder="Mật khẩu" style="text-align:center;margin-bottom:10px;">
+  return `<div class="lock-screen">
+    <div class="lock-icon">🔐</div>
+    <h3>${label}</h3>
+    <p>Nhập mật khẩu được cấp để mở trang này.</p>
+    <input type="password" id="passcodeInput" placeholder="Mật khẩu…">
     <button class="primary-btn" style="background:${color};" data-act="do-login" data-role="${roleKey}">Mở khoá</button>
-    <p id="loginError" class="week-sub" style="color:var(--bad);margin-top:8px;"></p>
+    <p id="loginError"></p>
   </div>`;
 }
-function emptyRoster(){ return '<p class="empty">Chưa có học sinh — vào tab "Lớp" để nhập danh sách.</p>'; }
+
+function emptyRoster(){ return '<p class="empty">Chưa có học sinh — vào tab Lớp để nhập danh sách.</p>'; }
 function formatDateVN(ds){ const [y,m,d]=ds.split('-'); return `${d}/${m}/${y}`; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escapeAttr(s){ return escapeHtml(s); }
 
-// ============ RENDER PIPELINE ============
 async function renderAsync(){
   const app = document.getElementById('app');
   const role = ROLE_META[state.tab];
   let coverHtml, mainHtml;
 
-  if(state.tab === 'home'){
-    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh · Sổ dùng chung cho ban cán sự`, role.color, false);
-    mainHtml = await renderHome();
+  if(state.tab === 'public'){
+    coverHtml = cover('Báo cáo lớp 10B1', `Xem tự do · ${formatDateVN(state.date)}`, role.color, true);
+    mainHtml = await renderPublic();
+  } else if(state.tab === 'home'){
+    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh · Chỉ GVCN chỉnh sửa được`, role.color, false);
+    mainHtml = await guarded('gvcn', renderHome);
   } else if(state.tab === 'lt'){
     coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.color, true);
     mainHtml = await guarded('lop-truong', renderLT);
   } else if(state.tab === 'hoctap'){
-    coverHtml = cover('LP Học tập', 'Truy bài đầu giờ (15 phút)', role.color, true);
+    coverHtml = cover('LP Học tập', 'Truy bài đầu giờ 15 phút', role.color, true);
     mainHtml = await guarded('hoc-tap', renderHocTap);
   } else if(state.tab === 'laodong'){
     coverHtml = cover('LP Lao động', 'Phân công & kiểm tra trực nhật', role.color, true);
     mainHtml = await guarded('lao-dong', renderLaoDong);
   } else if(state.tab === 'kyluat'){
-    coverHtml = cover('Kỷ luật', 'Điểm nền nếp theo tổ — điểm cộng & vi phạm', role.color, true);
+    coverHtml = cover('Kỷ luật', 'Điểm nền nếp theo tổ · điểm cộng & gậy 🥢', role.color, true);
     const subHtml = subtabs('kyluat', [['to-1','Tổ 1'],['to-2','Tổ 2'],['to-3','Tổ 3']]);
     if(!state.unlocked[state.sub.kyluat]){
       mainHtml = `<main>${subHtml}${lockBody('Tổ trưởng Tổ '+state.sub.kyluat.split('-')[1], role.color, state.sub.kyluat)}</main>`;
@@ -304,19 +538,82 @@ async function renderAsync(){
   app.innerHTML = coverHtml + mainHtml + tabbar();
   attachHandlers();
 }
+
 async function guarded(roleKey, renderFn){
   if(!state.unlocked[roleKey]) return `<main>${lockBody(ROLE_META[state.tab].label, ROLE_META[state.tab].color, roleKey)}</main>`;
   return await renderFn();
 }
 
-// ---------- HOME ----------
+// ---------- PUBLIC VIEW ----------
+async function renderPublic(){
+  const [attRaw, studyRaw, discLog] = await Promise.all([
+    sget('attendance:'+state.date),
+    sget('study:'+state.date),
+    sget('discipline:log:'+state.month),
+  ]);
+  const att = attRaw || {status:{}, phoneCount:0};
+  const study = studyRaw || {status:{}};
+  const log = Array.isArray(discLog) ? discLog : [];
+
+  // Điểm danh
+  const present=[], late=[], absent=[];
+  state.roster.forEach(s=>{
+    const st = att.status[s.id]||'present';
+    if(st==='present') present.push(s.name);
+    else if(st==='late') late.push(s.name);
+    else absent.push(s.name);
+  });
+  const attHtml = `
+    <div class="card">
+      <div class="row"><span class="name" style="color:var(--ok);">✅ Đúng giờ</span><span style="font-weight:700;">${present.length} bạn</span></div>
+      ${late.length?`<div class="row"><span class="name" style="color:var(--warn);">⏰ Muộn</span><span style="font-size:13px;color:var(--muted);">${late.join(', ')}</span></div>`:''}
+      ${absent.length?`<div class="row"><span class="name" style="color:var(--bad);">🚫 Vắng</span><span style="font-size:13px;color:var(--muted);">${absent.join(', ')}</span></div>`:''}
+      ${!late.length&&!absent.length?'<p class="empty" style="padding:8px 0;">Cả lớp đi đúng giờ hôm nay 🎉</p>':''}
+    </div>`;
+
+  // Học tập
+  const studyIssues = state.roster.filter(s=>['partial','none','noequip'].includes(study.status[s.id]));
+  const studyLabel = {partial:'Thiếu bài',none:'Không làm bài',noequip:'Thiếu dụng cụ'};
+  const studyHtml = studyIssues.length
+    ? `<div class="card">${studyIssues.map(s=>`<div class="row"><span class="name">${escapeHtml(s.name)}</span><span style="font-size:12px;color:var(--warn);">${studyLabel[study.status[s.id]]}</span></div>`).join('')}</div>`
+    : `<div class="card"><p class="empty" style="padding:8px 0;">Cả lớp hoàn thành bài tập 📚</p></div>`;
+
+  // Ranking tháng
+  const agg = {};
+  log.forEach(e=>{
+    if(!agg[e.studentId]) agg[e.studentId]={cong:0,gay:0};
+    if(e.type==='cong') agg[e.studentId].cong+=e.value; else agg[e.studentId].gay+=e.value;
+  });
+  const ranked = state.roster
+    .map(s=>({...s,...(agg[s.id]||{cong:0,gay:0})}))
+    .sort((a,b)=>b.cong-a.cong||a.gay-b.gay);
+  const medals=['🥇','🥈','🥉'];
+  const rankHtml = ranked.length ? ranked.map((s,i)=>`
+    <div class="row">
+      <span class="idx">${medals[i]||i+1}</span>
+      <span class="name">${escapeHtml(s.name)}</span>
+      <span style="font-size:12px;white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">+${s.cong}đ</span>${s.gay?` · <span style="color:var(--red);">${s.gay}🥢</span>`:''}</span>
+    </div>`).join('')
+    : '<p class="empty">Chưa có dữ liệu tháng này.</p>';
+
+  return `<main>
+    <h2 class="section">Điểm danh hôm nay</h2>
+    ${attHtml}
+    <h2 class="section">Học tập đầu giờ</h2>
+    ${studyHtml}
+    <h2 class="section">Ranking nền nếp <input type="month" id="monthInput" value="${state.month}" style="font-family:inherit;font-size:11px;border:1px solid var(--border);border-radius:8px;padding:3px 7px;background:var(--surf2);color:var(--text);margin-left:6px;letter-spacing:0;"></h2>
+    <div class="card">${rankHtml}</div>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:16px;">👀 Chỉ xem · không thể chỉnh sửa</p>
+  </main>`;
+}
+
 async function renderHome(){
   if(state.sub.home !== 'phancong'){
     const rows = state.roster.map((s,i)=>`
       <div class="roster-edit-row" data-id="${s.id}">
         <span class="idx">${i+1}</span>
         <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
-        <select class="rto sel" style="width:78px;flex:none;" data-id="${s.id}">
+        <select class="select-to" data-id="${s.id}">
           <option value="" ${!s.to?'selected':''}>Tổ?</option>
           <option value="1" ${s.to===1?'selected':''}>Tổ 1</option>
           <option value="2" ${s.to===2?'selected':''}>Tổ 2</option>
@@ -325,35 +622,38 @@ async function renderHome(){
         <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
       </div>`).join('');
     return `<main>
-      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công nhiệm vụ']])}
-      <h2 class="section">Danh sách học sinh (${state.roster.length})</h2>
+      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công']])}
+      <h2 class="section">Học sinh (${state.roster.length})</h2>
       <div class="card">
         ${rows || '<p class="empty">Chưa có học sinh nào.</p>'}
-        <button class="add-btn" data-act="add-student" style="background:#fff;color:var(--ink);border:1px dashed var(--paper-line);">+ Thêm học sinh</button>
+        <button class="add-btn" data-act="add-student">+ Thêm học sinh</button>
       </div>
       <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
-      <p style="text-align:center;font-size:12px;color:var(--ink-soft);margin-top:10px;">Chọn Tổ cho từng bạn để 3 tổ trưởng chỉ thấy đúng danh sách tổ mình.</p>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Chọn Tổ để tổ trưởng chỉ thấy tổ mình.</p>
     </main>`;
   } else {
     const assign = await sget('assignments') || {};
     const rows = ASSIGNMENT_FIELDS.map(f=>`
       <div class="card" style="margin-bottom:8px;">
         <div class="week-name">${f.title}</div>
-        <div class="week-sub" style="margin-bottom:6px;">${f.desc}</div>
-        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách...">
+        <div class="week-sub" style="margin-bottom:8px;">${f.desc}</div>
+        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách..." style="margin-top:0;">
       </div>`).join('');
     return `<main>
-      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công nhiệm vụ']])}
-      <h2 class="section">Phân công nhiệm vụ ban cán sự</h2>
+      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công']])}
+      <h2 class="section">Phân công ban cán sự</h2>
       ${rows}
       <button class="primary-btn" data-act="save-assignments">Lưu phân công</button>
     </main>`;
   }
 }
 
-// ---------- LỚP TRƯỞNG ----------
+let ltLoadedDate = null;
 async function renderLT(){
-  ltData = await sget('attendance:'+state.date) || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
+  if(ltLoadedDate !== state.date){
+    ltData = await sget('attendance:'+state.date) || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
+    ltLoadedDate = state.date;
+  }
   const present = state.roster.filter(s => (ltData.status[s.id]||'present')==='present').length;
   const rows = state.roster.map((s,i)=>{
     const st = ltData.status[s.id] || 'present';
@@ -368,12 +668,19 @@ async function renderLT(){
   }).join('');
   const phoneOk = ltData.phoneCount === present && state.roster.length>0;
   return `<main>
-    <div class="stat-strip"><span class="pill">Sĩ số: <b>${state.roster.length}</b></span><span class="pill">Có mặt: <b>${present}</b></span></div>
+    <div class="stat-strip">
+      <span class="pill">Sĩ số <b>${state.roster.length}</b></span>
+      <span class="pill">Có mặt <b>${present}</b></span>
+      <span class="pill">Vắng <b>${state.roster.length - present}</b></span>
+    </div>
     <h2 class="section">Điểm danh</h2>
     <div class="card">${rows || emptyRoster()}</div>
-    <h2 class="section">Thu điện thoại đầu giờ</h2>
+    <h2 class="section">Thu điện thoại</h2>
     <div class="card counter-card">
-      <div><div class="counter-num ${phoneOk?'ok':''}" id="phoneCountNum">${ltData.phoneCount}</div><div class="week-sub">/ ${present} bạn có mặt ${phoneOk ? '— Đủ ✓' : ''}</div></div>
+      <div>
+        <div class="counter-num ${phoneOk?'ok':''}" id="phoneCountNum">${ltData.phoneCount}</div>
+        <div class="week-sub">/ ${present} bạn có mặt ${phoneOk?'· Đủ ✓':''}</div>
+      </div>
       <div class="counter-btns"><button data-act="phone-dec">−</button><button data-act="phone-inc">+</button></div>
     </div>
     <h2 class="section">Hòm điện thoại</h2>
@@ -384,10 +691,13 @@ async function renderLT(){
   </main>`;
 }
 
-// ---------- LỚP PHÓ HỌC TẬP ----------
+let htLoadedDate = null;
 async function renderHocTap(){
   if(state.sub.hoctap === 'today'){
-    htData = await sget('study:'+state.date) || {status:{}, remind:false};
+    if(htLoadedDate !== state.date){
+      htData = await sget('study:'+state.date) || {status:{}, remind:false};
+      htLoadedDate = state.date;
+    }
     const rows = state.roster.map((s,i)=>{
       const st = htData.status[s.id] || 'full';
       return `<div class="row">
@@ -402,7 +712,7 @@ async function renderHocTap(){
     }).join('');
     return `<main>
       ${subtabs('hoctap', [['today','Hôm nay'],['week','Tổng hợp tuần']])}
-      <label class="check-row" style="margin-bottom:6px;"><input type="checkbox" data-act="chk-remind" ${htData.remind?'checked':''}> Đã nhắc BTVN của lớp lên nhóm hôm nay</label>
+      <label class="check-row" style="margin-bottom:8px;"><input type="checkbox" data-act="chk-remind" ${htData.remind?'checked':''}> Đã nhắc BTVN lên nhóm hôm nay</label>
       <h2 class="section">Truy bài 15 phút đầu giờ</h2>
       <div class="card">${rows || emptyRoster()}</div>
     </main>`;
@@ -413,17 +723,20 @@ async function renderHocTap(){
       const issues = c.partial + c.none + c.noequip;
       const flagged = issues >= 3;
       const pct = Math.min(100, issues*100/7);
-      return `<div class="card" style="margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;"><span class="week-name">${escapeHtml(s.name)}</span><span class="week-sub">${issues} lần</span></div>
-        ${flagged?'<span class="badge-flag">Cần chú ý</span>':''}
-        <div class="week-sub">Thiếu bài: ${c.partial} · Không làm: ${c.none} · Thiếu ĐD: ${c.noequip}</div>
-        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${flagged?'var(--bad)':'var(--warn)'}"></div></div>
+      return `<div class="week-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="week-name">${escapeHtml(s.name)}</span>
+          <span style="font-size:13px;font-weight:700;color:${flagged?'var(--red)':'var(--muted)'};">${issues} lần</span>
+        </div>
+        ${flagged?'<span class="badge-flag">⚠️ Cần chú ý</span>':''}
+        <div class="week-sub" style="margin-top:4px;">Thiếu bài: ${c.partial} · Không làm: ${c.none} · Thiếu ĐD: ${c.noequip}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${flagged?'var(--red)':'var(--warn)'}"></div></div>
       </div>`;
     }).join('');
     return `<main>
       ${subtabs('hoctap', [['today','Hôm nay'],['week','Tổng hợp tuần']])}
       <h2 class="section">7 ngày gần nhất</h2>
-      <p class="week-sub" style="margin-bottom:10px;">Từ 3 lần thiếu/không làm/thiếu dụng cụ trở lên sẽ được đánh dấu "Cần chú ý".</p>
+      <p class="week-sub" style="margin-bottom:12px;">Từ 3 lần trở lên → cần chú ý.</p>
       ${rows || emptyRoster()}
     </main>`;
   }
@@ -433,47 +746,53 @@ async function computeWeekly(){
   const d = new Date(state.date+'T00:00:00');
   for(let i=0;i<7;i++){ const dd=new Date(d); dd.setDate(d.getDate()-i); dates.push(dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0')); }
   const result = {};
-  for(const dt of dates){
-    const rec = await sget('study:'+dt);
-    if(!rec) continue;
+  const recs = await Promise.all(dates.map(dt=> sget('study:'+dt)));
+  recs.forEach(rec=>{
+    if(!rec) return;
     for(const [sid, st] of Object.entries(rec.status||{})){
       if(!result[sid]) result[sid] = {partial:0, none:0, noequip:0};
       if(st==='partial') result[sid].partial++;
       if(st==='none') result[sid].none++;
       if(st==='noequip') result[sid].noequip++;
     }
-  }
+  });
   return result;
 }
 
-// ---------- LỚP PHÓ LAO ĐỘNG ----------
+let ldConfigLoaded = false, ldLoadedDate = null;
 async function renderLaoDong(){
-  ldConfig = await sget('duty:config') || {groupSize:4, startDate: state.date, order: state.roster.map(s=>s.id)};
+  if(!ldConfigLoaded){
+    ldConfig = await sget('duty:config') || {groupSize:4, startDate: state.date, order: state.roster.map(s=>s.id)};
+    ldConfigLoaded = true;
+  }
   const rosterIds = state.roster.map(s=>s.id);
   ldConfig.order = ldConfig.order.filter(id=>rosterIds.includes(id));
   for(const id of rosterIds){ if(!ldConfig.order.includes(id)) ldConfig.order.push(id); }
-  ldDayData = await sget('duty:'+state.date) || {assigned: computeAssigned(state.date), checked:null, note:''};
+  if(ldLoadedDate !== state.date){
+    ldDayData = await sget('duty:'+state.date) || {assigned: computeAssigned(state.date), checked:null, note:''};
+    ldLoadedDate = state.date;
+  }
 
   if(state.sub.laodong === 'today'){
     const rows = state.roster.map((s,i)=>{
       const checked = ldDayData.assigned.includes(s.id);
       return `<label class="row" style="cursor:pointer;">
-        <input type="checkbox" data-act="toggle-duty" data-id="${s.id}" ${checked?'checked':''} style="width:20px;height:20px;">
+        <input type="checkbox" data-act="toggle-duty" data-id="${s.id}" ${checked?'checked':''} style="width:22px;height:22px;accent-color:var(--warn);">
         <span class="idx">${i+1}</span><span class="name">${escapeHtml(s.name)}</span>
       </label>`;
     }).join('');
     return `<main>
       ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
-      <h2 class="section">Trực nhật hôm nay (tick tên bạn trực)</h2>
+      <h2 class="section">Trực nhật hôm nay</h2>
       <div class="card">${rows || emptyRoster()}</div>
       <h2 class="section">Kiểm tra cuối giờ</h2>
       <div class="card">
         <div class="seg" data-group="duty-check" style="width:100%;">
-          <button data-val="pass" style="flex:1;${ldDayData.checked==='pass'?'background:var(--ok);color:#fff;':''}">Đạt</button>
-          <button data-val="fail" style="flex:1;${ldDayData.checked==='fail'?'background:var(--bad);color:#fff;':''}">Chưa đạt</button>
+          <button data-val="pass" style="flex:1;${ldDayData.checked==='pass'?'background:var(--ok);color:#000;':''}">✓ Đạt</button>
+          <button data-val="fail" style="flex:1;${ldDayData.checked==='fail'?'background:var(--bad);color:#fff;':''}">✗ Chưa đạt</button>
         </div>
-        <textarea class="note-input" id="dutyNote" rows="2" placeholder="Ghi chú (vd: bảng chưa lau...)">${escapeHtml(ldDayData.note||'')}</textarea>
-        <button class="primary-btn role" data-act="save-duty-note">Lưu nhận xét</button>
+        <textarea class="note-input" id="dutyNote" rows="2" placeholder="Ghi chú (vd: bảng chưa lau…)">${escapeHtml(ldDayData.note||'')}</textarea>
+        <button class="primary-btn role" data-act="save-duty-note" style="background:var(--warn);">Lưu nhận xét</button>
       </div>
     </main>`;
   } else if(state.sub.laodong === 'upcoming'){
@@ -484,21 +803,21 @@ async function renderLaoDong(){
       const ds = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
       const ids = computeAssigned(ds);
       const names = ids.map(id=> state.roster.find(s=>s.id===id)?.name || '?').join(', ');
-      rows += `<div class="card" style="margin-bottom:8px;"><div class="week-name">${formatDateVN(ds)}${i===0?' (hôm nay)':''}</div><div class="week-sub">${names || '—'}</div></div>`;
+      rows += `<div class="week-card"><div class="week-name">${formatDateVN(ds)}${i===0?' · hôm nay':''}</div><div class="week-sub">${names || '—'}</div></div>`;
     }
-    return `<main>${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}<h2 class="section">Gợi ý lịch trực 7 ngày tới</h2>${rows}</main>`;
+    return `<main>${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}<h2 class="section">Gợi ý 7 ngày tới</h2>${rows}</main>`;
   } else {
     return `<main>
       ${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
-      <h2 class="section">Cài đặt vòng quay gợi ý</h2>
+      <h2 class="section">Cài đặt vòng quay</h2>
       <div class="card">
         <label class="field-label">Số bạn trực mỗi buổi</label>
-        <input type="text" inputmode="numeric" class="note-input" id="groupSizeInput" value="${ldConfig.groupSize}">
+        <input type="text" inputmode="numeric" class="note-input" id="groupSizeInput" value="${ldConfig.groupSize}" style="margin-top:0;">
         <label class="field-label">Ngày bắt đầu vòng quay</label>
-        <input type="date" class="note-input" id="startDateInput" value="${ldConfig.startDate}">
-        <button class="primary-btn role" data-act="save-duty-config">Lưu cài đặt</button>
+        <input type="date" class="note-input" id="startDateInput" value="${ldConfig.startDate}" style="margin-top:0;">
+        <button class="primary-btn role" data-act="save-duty-config" style="background:var(--warn);">Lưu cài đặt</button>
       </div>
-      <p class="week-sub">Đây chỉ là gợi ý mặc định — bạn vẫn có thể tick tay ở tab "Hôm nay" bất cứ lúc nào.</p>
+      <p class="week-sub">Đây là gợi ý — vẫn có thể tick tay ở tab Hôm nay.</p>
     </main>`;
   }
 }
@@ -515,7 +834,6 @@ function computeAssigned(dateStr){
   return ldConfig.order.slice(g*size, g*size+size);
 }
 
-// ---------- KỶ LUẬT (3 TỔ TRƯỞNG) ----------
 function monthOf(dateStr){ return dateStr.slice(0,7); }
 function prevMonths(month, n){
   const [y,m] = month.split('-').map(Number);
@@ -533,7 +851,7 @@ function aggregateLog(log){
   return agg;
 }
 function gayTier(total){
-  if(total>=3) return {label:'Báo phụ huynh, cân nhắc hạnh kiểm tháng'};
+  if(total>=3) return {label:'Báo phụ huynh · cân nhắc hạnh kiểm'};
   if(total===2) return {label:'Viết kiểm điểm + phạt trực nhật 3 ngày'};
   if(total===1) return {label:'Khiển trách'};
   return null;
@@ -551,18 +869,25 @@ async function renderKyLuat(subHtml){
   const log = await getMonthLog(state.month);
   const agg = aggregateLog(log);
   const catList = disciplineForm.type === 'cong' ? CONG_CATEGORIES : VIPHAM_CATEGORIES;
-  const catOptions = catList.map(c=>`<option value="${escapeAttr(c.label)}" ${disciplineForm.category===c.label?'selected':''}>${escapeHtml(c.label)} (${disciplineForm.type==='cong'?'+'+c.pts+' đ':c.gay+' gậy'})</option>`).join('') + `<option value="Khác" ${disciplineForm.category==='Khác'?'selected':''}>Khác (thảo luận với GVCN)</option>`;
+  const catOptions = catList.map(c=>`<option value="${escapeAttr(c.label)}" ${disciplineForm.category===c.label?'selected':''}>${escapeHtml(c.label)} (${disciplineForm.type==='cong'?'+'+c.pts+' đ':c.gay+' 🥢'})</option>`).join('') + `<option value="Khác" ${disciplineForm.category==='Khác'?'selected':''}>Khác (thảo luận với GVCN)</option>`;
   const studentOptions = students.map(s=>`<option value="${s.id}" ${disciplineForm.studentId===s.id?'selected':''}>${escapeAttr(s.name)}</option>`).join('');
   const isKhac = disciplineForm.category === 'Khác';
+  const color = ROLE_META.kyluat.color;
 
   const monthRows = students.map(s=>{
     const a = agg[s.id] || {cong:0, gay:0};
     const tier = gayTier(a.gay);
     const badges = quyenLoiTier(a.cong);
     return `<div class="card" style="margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;"><span class="week-name">${escapeHtml(s.name)}</span><span class="week-sub">+${a.cong} đ · ${a.gay} gậy</span></div>
+      <div class="disc-summary">
+        <span class="week-name">${escapeHtml(s.name)}</span>
+        <div style="display:flex;gap:14px;align-items:center;">
+          <div class="score-block"><div class="score-num" style="color:var(--teal);">+${a.cong}</div><div class="score-label" style="color:var(--teal);">điểm</div></div>
+          <div class="score-block"><div class="score-num" style="color:var(--red);">${a.gay}</div><div class="score-label" style="color:var(--red);">🥢</div></div>
+        </div>
+      </div>
       ${tier ? `<div class="badge-flag">${tier.label}</div>` : ''}
-      ${badges.length ? `<div class="week-sub" style="margin-top:6px;color:var(--ok);">🎁 ${badges.join(' · ')}</div>` : ''}
+      ${badges.length ? `<div class="week-sub" style="margin-top:6px;color:var(--teal);">🎁 ${badges.join(' · ')}</div>` : ''}
     </div>`;
   }).join('');
 
@@ -570,45 +895,53 @@ async function renderKyLuat(subHtml){
     const name = state.roster.find(s=>s.id===e.studentId)?.name || '(đã xoá)';
     const isCong = e.type==='cong';
     return `<div class="disc-entry">
-      <div style="display:flex;justify-content:space-between;gap:8px;"><span><b>${escapeHtml(name)}</b> — ${escapeHtml(e.category)}${e.note?(' ('+escapeHtml(e.note)+')'):''}</span><span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+        <span style="flex:1;"><b>${escapeHtml(name)}</b> — <span style="color:var(--muted);">${escapeHtml(e.category)}${e.note?(' · '+escapeHtml(e.note)):''}</span></span>
+        <span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span>
+      </div>
       <div class="week-sub">${formatDateVN(e.date)}</div>
     </div>`;
   }).join('');
 
   return `<main>${subHtml}
-    <h2 class="section">Thêm ghi nhận — Tổ ${toNum}</h2>
+    <h2 class="section">Ghi nhận — Tổ ${toNum}</h2>
     <div class="card">
-      <div class="seg" style="width:100%;margin-bottom:8px;">
-        <button data-form-type="cong" style="flex:1;${disciplineForm.type==='cong'?'background:var(--ok);color:#fff;':''}">Điểm cộng</button>
-        <button data-form-type="vipham" style="flex:1;${disciplineForm.type==='vipham'?'background:var(--bad);color:#fff;':''}">Vi phạm</button>
+      <div class="seg" style="width:100%;margin-bottom:12px;">
+        <button data-form-type="cong" style="flex:1;${disciplineForm.type==='cong'?'background:var(--teal);color:#000;':''}">⬆ Điểm cộng</button>
+        <button data-form-type="vipham" style="flex:1;${disciplineForm.type==='vipham'?'background:var(--red);color:#fff;':''}">🥢 Vi phạm</button>
       </div>
-      <label class="field-label">Học sinh (Tổ ${toNum})</label>
-      <select class="sel" id="discStudent">${studentOptions || '<option value="">— chưa có bạn nào —</option>'}</select>
+      <label class="field-label">Học sinh — Tổ ${toNum}</label>
+      <select class="sel" id="discStudent" style="margin-top:0;">${studentOptions || '<option value="">— chưa có bạn nào —</option>'}</select>
       <label class="field-label">Danh mục</label>
-      <select class="sel" id="discCategory">${catOptions}</select>
-      ${isKhac ? `<label class="field-label">${disciplineForm.type==='cong'?'Số điểm cộng':'Số gậy'}</label><input type="text" inputmode="numeric" class="note-input" id="discCustomValue" placeholder="Nhập số, đã thảo luận với GVCN">` : ''}
+      <select class="sel" id="discCategory" style="margin-top:0;">${catOptions}</select>
+      ${isKhac ? `<label class="field-label">${disciplineForm.type==='cong'?'Số điểm cộng':'Số gậy'}</label><input type="text" inputmode="numeric" class="note-input" id="discCustomValue" placeholder="Nhập số, đã thảo luận với GVCN" style="margin-top:0;">` : ''}
       <label class="field-label">Ghi chú (tuỳ chọn)</label>
-      <input type="text" class="note-input" id="discNote" placeholder="Chi tiết cụ thể...">
-      <button class="primary-btn role" data-act="add-disc">Lưu ghi nhận</button>
+      <input type="text" class="note-input" id="discNote" placeholder="Chi tiết cụ thể…" style="margin-top:0;">
+      <button class="primary-btn" style="background:${color};" data-act="add-disc">Lưu ghi nhận</button>
     </div>
     <h2 class="section">Tổng hợp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
     ${monthRows || emptyRoster()}
-    <h2 class="section">Nhật ký gần đây — Tổ ${toNum}</h2>
+    <h2 class="section">Nhật ký — Tổ ${toNum}</h2>
     <div class="card">${recent || '<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
   </main>`;
 }
 
-// ---------- GVCN ----------
 async function renderGVCN(){
-  const att = await sget('attendance:'+state.date) || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
+  const months3 = prevMonths(state.month, 3);
+  const [attRaw, studyRaw, dutyRaw, assign, ...logsByMonth] = await Promise.all([
+    sget('attendance:'+state.date),
+    sget('study:'+state.date),
+    sget('duty:'+state.date),
+    sget('assignments'),
+    ...months3.map(m=> getMonthLog(m))
+  ]);
+  const att = attRaw || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
   const lateList=[], absentList=[];
   state.roster.forEach(s=>{ const st=att.status[s.id]||'present'; if(st==='late') lateList.push(s.name); else if(st==='absent') absentList.push(s.name); });
-  const study = await sget('study:'+state.date) || {status:{}, remind:false};
+  const study = studyRaw || {status:{}, remind:false};
   const issueList = state.roster.filter(s=> ['partial','none','noequip'].includes(study.status[s.id])).map(s=>({name:s.name, st:study.status[s.id]}));
-  const duty = await sget('duty:'+state.date) || null;
+  const duty = dutyRaw || null;
   const dutyNames = duty ? duty.assigned.map(id=>state.roster.find(s=>s.id===id)?.name||'?') : [];
-  const months3 = prevMonths(state.month, 3);
-  const logsByMonth = await Promise.all(months3.map(m=> getMonthLog(m)));
   const aggByMonth = logsByMonth.map(aggregateLog);
   const agg = aggByMonth[0];
 
@@ -619,30 +952,30 @@ async function renderGVCN(){
       const tier = gayTier(a.gay);
       const badges = quyenLoiTier(a.cong);
       const chronic = months3.every((m,i)=> (aggByMonth[i][s.id]?.gay||0) >=3 );
-      return `<div class="row"><span class="name">${escapeHtml(s.name)}</span><span class="week-sub">+${a.cong}đ · ${a.gay}🥢${tier?' · '+tier.label:''}${chronic?' · <b style="color:var(--bad);">Cân nhắc hạnh kiểm kỳ</b>':''}${badges.length?' · 🎁 '+badges.join(', '):''}</span></div>`;
+      return `<div class="row"><span class="name">${escapeHtml(s.name)}</span><span style="font-size:12px;color:var(--muted);"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?' · '+tier.label:''}${chronic?' · <b style="color:var(--red);">Cân nhắc hạnh kiểm kỳ</b>':''}${badges.length?' · 🎁 '+badges.join(', '):''}</span></div>`;
     }).join('');
     return `<h2 class="section">Tổ ${toNum}</h2><div class="card">${rows || emptyRoster()}</div>`;
   }).join('');
 
-  const assign = await sget('assignments') || {};
-  const assignRows = ASSIGNMENT_FIELDS.map(f=>`<div class="row"><span class="name">${f.title}</span><span class="week-sub">${escapeHtml(assign[f.key]||'(chưa có)')}</span></div>`).join('');
+  const assignSafe = assign || {};
+  const assignRows = ASSIGNMENT_FIELDS.map(f=>`<div class="row"><span class="name">${f.title}</span><span class="week-sub">${escapeHtml(assignSafe[f.key]||'(chưa có)')}</span></div>`).join('');
 
   return `<main>
-    <h2 class="section">Điểm danh ngày ${formatDateVN(state.date)}</h2>
+    <h2 class="section">Điểm danh ${formatDateVN(state.date)}</h2>
     <div class="card">
-      <div class="week-sub">Vắng: ${absentList.join(', ')||'không có'}</div>
-      <div class="week-sub">Muộn: ${lateList.join(', ')||'không có'}</div>
-      <div class="week-sub">Thu điện thoại: ${att.phoneCount}/${state.roster.length} · Hòm: ${att.openedBox?'đã mở':'chưa mở'} / ${att.closedBox?'đã dọn':'chưa dọn'}</div>
+      <div class="week-sub">🚫 Vắng: ${absentList.join(', ')||'không có'}</div>
+      <div class="week-sub">⏰ Muộn: ${lateList.join(', ')||'không có'}</div>
+      <div class="week-sub">📱 Thu ĐT: ${att.phoneCount}/${state.roster.length} · Hòm: ${att.openedBox?'đã mở':'chưa mở'} / ${att.closedBox?'đã dọn':'chưa dọn'}</div>
     </div>
     <h2 class="section">Truy bài hôm nay</h2>
     <div class="card">
-      ${issueList.length ? issueList.map(x=>`<div class="week-sub">${escapeHtml(x.name)} — ${x.st==='partial'?'thiếu bài':x.st==='none'?'không làm bài':'thiếu dụng cụ'}</div>`).join('') : '<p class="empty">Không có vấn đề gì hôm nay.</p>'}
-      <div class="week-sub" style="margin-top:6px;">Đã nhắc BTVN: ${study.remind?'✓ rồi':'chưa'}</div>
+      ${issueList.length ? issueList.map(x=>`<div class="week-sub">${escapeHtml(x.name)} — ${x.st==='partial'?'thiếu bài':x.st==='none'?'không làm bài':'thiếu dụng cụ'}</div>`).join('') : '<p class="empty">Không có vấn đề gì hôm nay ✓</p>'}
+      <div class="week-sub" style="margin-top:6px;">Đã nhắc BTVN: ${study.remind?'✓':'chưa'}</div>
     </div>
     <h2 class="section">Trực nhật hôm nay</h2>
     <div class="card">
       <div class="week-sub">${dutyNames.join(', ')||'chưa phân công'}</div>
-      <div class="week-sub">Kiểm tra: ${duty && duty.checked==='pass'?'Đạt':duty && duty.checked==='fail'?'Chưa đạt':'chưa kiểm tra'}${duty && duty.note?(' — '+escapeHtml(duty.note)):''}</div>
+      <div class="week-sub">Kiểm tra: ${duty && duty.checked==='pass'?'✓ Đạt':duty && duty.checked==='fail'?'✗ Chưa đạt':'chưa kiểm tra'}${duty && duty.note?(' — '+escapeHtml(duty.note)):''}</div>
     </div>
     <h2 class="section">Nền nếp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
     ${disciplineRows}
@@ -651,11 +984,12 @@ async function renderGVCN(){
   </main>`;
 }
 
-// ============ EVENTS ============
 function attachHandlers(){
   const app = document.getElementById('app');
 
   app.querySelectorAll('[data-tab]').forEach(btn=>{ btn.onclick = ()=>{ state.tab = btn.dataset.tab; render(); }; });
+  const goLoginBtn = app.querySelector('[data-act="go-login"]');
+  if(goLoginBtn) goLoginBtn.onclick = ()=>{ state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; render(); };
   app.querySelectorAll('[data-subtab]').forEach(btn=>{
     btn.onclick = ()=>{
       const [group,key] = btn.dataset.subtab.split(':');
@@ -668,10 +1002,11 @@ function attachHandlers(){
   if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; renderAsync(); };
   const todayBtn = app.querySelector('[data-act="today"]');
   if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
+  const themeBtn = app.querySelector('[data-act="toggle-theme"]');
+  if(themeBtn) themeBtn.onclick = ()=>{ document.documentElement.classList.toggle('light'); renderAsync(); };
   const monthInput = document.getElementById('monthInput');
   if(monthInput) monthInput.onchange = ()=>{ state.month = monthInput.value; renderAsync(); };
 
-  // login
   const loginBtn = app.querySelector('[data-act="do-login"]');
   if(loginBtn) loginBtn.onclick = async ()=>{
     const val = document.getElementById('passcodeInput').value;
@@ -681,7 +1016,6 @@ function attachHandlers(){
     else { document.getElementById('loginError').textContent = 'Sai mật khẩu, thử lại.'; }
   };
 
-  // HOME
   const addStudentBtn = app.querySelector('[data-act="add-student"]');
   if(addStudentBtn) addStudentBtn.onclick = ()=>{
     state.roster.push({id:uid(), name:'', to:null});
@@ -691,14 +1025,14 @@ function attachHandlers(){
   };
   app.querySelectorAll('[data-act="rm-student"]').forEach(btn=>{ btn.onclick = ()=>{ state.roster = state.roster.filter(s=>s.id!==btn.dataset.id); render(); }; });
   app.querySelectorAll('.rname').forEach((inp,i)=>{ inp.oninput = ()=>{ state.roster[i].name = inp.value; }; });
-  app.querySelectorAll('.rto').forEach(sel=>{
+  app.querySelectorAll('.select-to').forEach(sel=>{
     sel.onchange = ()=>{ const s = state.roster.find(x=>x.id===sel.dataset.id); if(s) s.to = sel.value ? parseInt(sel.value) : null; };
   });
   const saveRosterBtn = app.querySelector('[data-act="save-roster"]');
   if(saveRosterBtn) saveRosterBtn.onclick = async ()=>{
     state.roster = state.roster.filter(s=>s.name.trim()!=='');
     await saveRoster();
-    showToast('Đã lưu danh sách lớp');
+    showToast('✓ Đã lưu danh sách lớp');
     render();
   };
   const saveAssignBtn = app.querySelector('[data-act="save-assignments"]');
@@ -706,61 +1040,57 @@ function attachHandlers(){
     const obj = {};
     app.querySelectorAll('.assign-input').forEach(inp=>{ obj[inp.dataset.key] = inp.value; });
     await sset('assignments', obj);
-    showToast('Đã lưu phân công nhiệm vụ');
+    showToast('✓ Đã lưu phân công');
   };
 
-  // LT
   app.querySelectorAll('[data-group="att"]').forEach(seg=>{
     seg.querySelectorAll('button').forEach(btn=>{
-      btn.onclick = async ()=>{ ltData.status[seg.dataset.id] = btn.dataset.val; await sset('attendance:'+state.date, ltData); renderAsync(); };
+      btn.onclick = ()=>{ ltData.status[seg.dataset.id] = btn.dataset.val; renderAsync(); sset('attendance:'+state.date, ltData); };
     });
   });
   const phoneInc = app.querySelector('[data-act="phone-inc"]');
   const phoneDec = app.querySelector('[data-act="phone-dec"]');
-  if(phoneInc) phoneInc.onclick = async ()=>{ ltData.phoneCount = Math.min(state.roster.length, (ltData.phoneCount||0)+1); await sset('attendance:'+state.date, ltData); renderAsync(); };
-  if(phoneDec) phoneDec.onclick = async ()=>{ ltData.phoneCount = Math.max(0, (ltData.phoneCount||0)-1); await sset('attendance:'+state.date, ltData); renderAsync(); };
+  if(phoneInc) phoneInc.onclick = ()=>{ ltData.phoneCount = Math.min(state.roster.length, (ltData.phoneCount||0)+1); renderAsync(); sset('attendance:'+state.date, ltData); };
+  if(phoneDec) phoneDec.onclick = ()=>{ ltData.phoneCount = Math.max(0, (ltData.phoneCount||0)-1); renderAsync(); sset('attendance:'+state.date, ltData); };
   const chkOpen = app.querySelector('[data-act="chk-open"]');
-  if(chkOpen) chkOpen.onchange = async ()=>{ ltData.openedBox = chkOpen.checked; await sset('attendance:'+state.date, ltData); };
+  if(chkOpen) chkOpen.onchange = ()=>{ ltData.openedBox = chkOpen.checked; sset('attendance:'+state.date, ltData); };
   const chkClose = app.querySelector('[data-act="chk-close"]');
-  if(chkClose) chkClose.onchange = async ()=>{ ltData.closedBox = chkClose.checked; await sset('attendance:'+state.date, ltData); };
+  if(chkClose) chkClose.onchange = ()=>{ ltData.closedBox = chkClose.checked; sset('attendance:'+state.date, ltData); };
 
-  // HOC TAP
   app.querySelectorAll('[data-group="study"]').forEach(seg=>{
     seg.querySelectorAll('button').forEach(btn=>{
-      btn.onclick = async ()=>{ htData.status[seg.dataset.id] = btn.dataset.val; await sset('study:'+state.date, htData); renderAsync(); };
+      btn.onclick = ()=>{ htData.status[seg.dataset.id] = btn.dataset.val; renderAsync(); sset('study:'+state.date, htData); };
     });
   });
   const chkRemind = app.querySelector('[data-act="chk-remind"]');
-  if(chkRemind) chkRemind.onchange = async ()=>{ htData.remind = chkRemind.checked; await sset('study:'+state.date, htData); };
+  if(chkRemind) chkRemind.onchange = ()=>{ htData.remind = chkRemind.checked; sset('study:'+state.date, htData); };
 
-  // LAO DONG
   app.querySelectorAll('[data-act="toggle-duty"]').forEach(chk=>{
-    chk.onchange = async ()=>{
+    chk.onchange = ()=>{
       const id = chk.dataset.id;
       const idx = ldDayData.assigned.indexOf(id);
       if(idx>=0) ldDayData.assigned.splice(idx,1); else ldDayData.assigned.push(id);
-      await sset('duty:'+state.date, ldDayData);
+      sset('duty:'+state.date, ldDayData);
     };
   });
   app.querySelectorAll('[data-group="duty-check"] button').forEach(btn=>{
-    btn.onclick = async ()=>{ ldDayData.checked = btn.dataset.val; await sset('duty:'+state.date, ldDayData); renderAsync(); };
+    btn.onclick = ()=>{ ldDayData.checked = btn.dataset.val; renderAsync(); sset('duty:'+state.date, ldDayData); };
   });
   const saveDutyNoteBtn = app.querySelector('[data-act="save-duty-note"]');
   if(saveDutyNoteBtn) saveDutyNoteBtn.onclick = async ()=>{
     ldDayData.note = document.getElementById('dutyNote').value;
     await sset('duty:'+state.date, ldDayData);
-    showToast('Đã lưu nhận xét trực nhật');
+    showToast('✓ Đã lưu nhận xét trực nhật');
   };
   const saveDutyConfigBtn = app.querySelector('[data-act="save-duty-config"]');
   if(saveDutyConfigBtn) saveDutyConfigBtn.onclick = async ()=>{
     ldConfig.groupSize = Math.max(1, parseInt(document.getElementById('groupSizeInput').value)||1);
     ldConfig.startDate = document.getElementById('startDateInput').value || state.date;
     await sset('duty:config', ldConfig);
-    showToast('Đã lưu cài đặt');
+    showToast('✓ Đã lưu cài đặt');
     renderAsync();
   };
 
-  // KY LUAT
   app.querySelectorAll('[data-form-type]').forEach(btn=>{
     btn.onclick = ()=>{ disciplineForm.type = btn.dataset.formType; disciplineForm.category=''; renderAsync(); };
   });
@@ -787,7 +1117,7 @@ function attachHandlers(){
     const log = await getMonthLog(entryMonth);
     log.push({id:uid(), studentId, type:disciplineForm.type, category, value, note, date: state.date});
     await sset('discipline:log:'+entryMonth, log);
-    showToast('Đã lưu ghi nhận');
+    showToast('✓ Đã lưu ghi nhận');
     disciplineForm.studentId=''; disciplineForm.category='';
     renderAsync();
   };
