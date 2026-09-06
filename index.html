@@ -318,16 +318,21 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbw79Fcxf8BPieKv0_YvZwx5
 const API_TOKEN = 'Lop10b1@2026';
 // ====================================
 
+const _cache = {};
 async function sget(key){
+  if(key in _cache) return _cache[key];
   try{
     const url = `${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
     const data = await res.json();
     if(data.error) throw new Error(data.error);
-    return data.value ? JSON.parse(data.value) : null;
+    const val = data.value ? JSON.parse(data.value) : null;
+    _cache[key] = val;
+    return val;
   } catch(e){ console.error('sget failed', key, e); return null; }
 }
 async function sset(key, value){
+  _cache[key] = value; // cập nhật cache ngay, không chờ GAS
   try{
     const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
