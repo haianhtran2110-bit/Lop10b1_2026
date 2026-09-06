@@ -523,10 +523,10 @@ function prevMonths(month, n){
   for(let i=0;i<n;i++){ let mm=m-i, yy=y; while(mm<=0){mm+=12; yy-=1;} arr.push(yy+'-'+String(mm).padStart(2,'0')); }
   return arr;
 }
-function aggregateMonth(log, month){
+async function getMonthLog(month){ return await sget('discipline:log:'+month) || []; }
+function aggregateLog(log){
   const agg = {};
   log.forEach(e=>{
-    if(monthOf(e.date) !== month) return;
     if(!agg[e.studentId]) agg[e.studentId] = {cong:0, gay:0};
     if(e.type==='cong') agg[e.studentId].cong += e.value; else agg[e.studentId].gay += e.value;
   });
@@ -548,8 +548,8 @@ function quyenLoiTier(total){
 async function renderKyLuat(subHtml){
   const toNum = parseInt(state.sub.kyluat.split('-')[1]);
   const students = state.roster.filter(s=> s.to === toNum);
-  const log = await sget('discipline:log') || [];
-  const agg = aggregateMonth(log, state.month);
+  const log = await getMonthLog(state.month);
+  const agg = aggregateLog(log);
   const catList = disciplineForm.type === 'cong' ? CONG_CATEGORIES : VIPHAM_CATEGORIES;
   const catOptions = catList.map(c=>`<option value="${escapeAttr(c.label)}" ${disciplineForm.category===c.label?'selected':''}>${escapeHtml(c.label)} (${disciplineForm.type==='cong'?'+'+c.pts+' đ':c.gay+' gậy'})</option>`).join('') + `<option value="Khác" ${disciplineForm.category==='Khác'?'selected':''}>Khác (thảo luận với GVCN)</option>`;
   const studentOptions = students.map(s=>`<option value="${s.id}" ${disciplineForm.studentId===s.id?'selected':''}>${escapeAttr(s.name)}</option>`).join('');
@@ -607,10 +607,10 @@ async function renderGVCN(){
   const issueList = state.roster.filter(s=> ['partial','none','noequip'].includes(study.status[s.id])).map(s=>({name:s.name, st:study.status[s.id]}));
   const duty = await sget('duty:'+state.date) || null;
   const dutyNames = duty ? duty.assigned.map(id=>state.roster.find(s=>s.id===id)?.name||'?') : [];
-  const log = await sget('discipline:log') || [];
-  const agg = aggregateMonth(log, state.month);
   const months3 = prevMonths(state.month, 3);
-  const aggByMonth = months3.map(m=> aggregateMonth(log, m));
+  const logsByMonth = await Promise.all(months3.map(m=> getMonthLog(m)));
+  const aggByMonth = logsByMonth.map(aggregateLog);
+  const agg = aggByMonth[0];
 
   const disciplineRows = [1,2,3].map(toNum=>{
     const students = state.roster.filter(s=>s.to===toNum);
@@ -783,9 +783,10 @@ function attachHandlers(){
       const found = list.find(c=>c.label===category);
       value = disciplineForm.type==='cong' ? found.pts : found.gay;
     }
-    const log = await sget('discipline:log') || [];
+    const entryMonth = monthOf(state.date);
+    const log = await getMonthLog(entryMonth);
     log.push({id:uid(), studentId, type:disciplineForm.type, category, value, note, date: state.date});
-    await sset('discipline:log', log);
+    await sset('discipline:log:'+entryMonth, log);
     showToast('Đã lưu ghi nhận');
     disciplineForm.studentId=''; disciplineForm.category='';
     renderAsync();
