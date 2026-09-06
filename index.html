@@ -329,7 +329,10 @@ async function sget(key){
 }
 async function sset(key, value){
   try{
-    await fetch(API_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ action:'set', key, value: JSON.stringify(value), token: API_TOKEN }) });
+    const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
     return true;
   } catch(e){ console.error('sset failed', key, e); showToast('Lỗi lưu dữ liệu'); return false; }
 }
