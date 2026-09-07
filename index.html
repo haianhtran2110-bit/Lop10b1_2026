@@ -368,6 +368,19 @@ async function init(){
   await loadRoster();
   state.loading = false;
   render();
+  // Prefetch data cho ngày hôm nay vào cache ngay sau khi render
+  setTimeout(()=>{
+    const today = state.date;
+    const month = state.month;
+    Promise.all([
+      sget('attendance:'+today),
+      sget('study:'+today),
+      sget('duty:'+today),
+      sget('duty:config'),
+      sget('discipline:log:'+month),
+      sget('assignments'),
+    ]);
+  }, 100);
 }
 
 function toggleTheme(){
@@ -714,8 +727,8 @@ async function renderLT(){
   return `<main>
     <div class="stat-strip">
       <span class="pill">Sĩ số <b>${state.roster.length}</b></span>
-      <span class="pill">Có mặt <b>${present}</b></span>
-      <span class="pill">Vắng <b>${state.roster.length - present}</b></span>
+      <span class="pill">Có mặt <b class="pill-present">${present}</b></span>
+      <span class="pill">Vắng <b class="pill-absent">${state.roster.length - present}</b></span>
     </div>
     <h2 class="section">Điểm danh</h2>
     <div class="card">${rows || emptyRoster()}</div>
