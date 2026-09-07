@@ -246,18 +246,17 @@ const PUBLIC_TABS = ['public'];
 const ROLE_LOGIN_KEY = { lt:'lop-truong', hoctap:'hoc-tap', laodong:'lao-dong', gvcn:'gvcn' };
 
 const CONG_CATEGORIES = [
+  {label:'Thực hiện tốt vai trò trong ban cán sự lớp', pts:10},
   {label:'Được nhà trường tuyên dương', pts:15},
-  {label:'Thực hiện tốt vai trò trong ban cán sự lớp (tháng)', pts:10},
   {label:'Đạt giải đội tuyển / phong trào (TDTT, văn nghệ, cuộc thi, HSG)', pts:10},
   {label:'Tham gia tích cực đội tuyển / phong trào', pts:5},
-  {label:'Được khen bởi GVBM', pts:5},
+  {label:'Đến cổ vũ đội tuyển / phong trào', pts:2},
   {label:'Được khen / điểm tốt trong sổ đầu bài', pts:5},
-  {label:'Có tiến bộ rõ rệt trong học tập', pts:5},
-  {label:'Giúp đỡ lớp, thầy cô, bạn bè', pts:5},
-  {label:'Streak 1 tuần đủ bài tập', pts:5},
-  {label:'Đến cổ vũ đội tuyển/ phong trào', pts:2},
+  {label:'Được khen bởi GVBM', pts:5},
   {label:'Đến sớm 15 phút trong hoạt động ngoài giờ học', pts:2},
-  {label:'Hỗ trợ vệ sinh của lớp/ Hoàn thành trực nhật tốt', pts:2},
+  {label:'Có tiến bộ rõ rệt', pts:5},
+  {label:'Giúp đỡ lớp, thầy cô, bạn bè', pts:5},
+  {label:'Hỗ trợ vệ sinh của lớp', pts:2},
 ];
 const VIPHAM_CATEGORIES = [
   {label:'Bạo lực học đường (ngôn từ, thể chất, tinh thần)', gay:6},
@@ -481,7 +480,7 @@ function cover(title, sub, color, showDate){
   return `<div class="cover" style="--role-color:${color}">
     <div class="cover-blob"></div>
     <div class="cover-blob2"></div>
-    <p class="eyebrow">Sổ theo dõi nền nếp · Lớp 10B1</p>
+    <p class="eyebrow">Sổ quản lý · Lớp 10B1</p>
     <h1>${title}</h1>
     <p class="sub">${sub}</p>
   </div>${dateBar}`;
@@ -614,7 +613,7 @@ async function renderPublic(){
     <div class="row">
       <span class="idx">${medals[i]||i+1}</span>
       <span class="name">${escapeHtml(s.name)}</span>
-      <span style="font-size:12px;white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">+${s.cong}đ</span>${s.gay?` · <span style="color:var(--red);">${s.gay}🥢</span>`:''}</span>
+      <span style="font-size:12px;white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">+${s.cong}đ</span> · <span style="color:var(--red);">${s.gay}🥢</span></span>
     </div>`).join('')
     : '<p class="empty">Chưa có dữ liệu tháng này.</p>';
 
