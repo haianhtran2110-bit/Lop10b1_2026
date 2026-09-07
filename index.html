@@ -850,27 +850,21 @@ async function renderLaoDong(){
     const savedDuties = await Promise.all(upDates.map(ds=> sget('duty:'+ds)));
     const rows = upDates.map((ds, i)=>{
       const saved = savedDuties[i];
-      // Use saved assigned if exists, else compute
       const assigned = saved ? saved.assigned : computeAssigned(ds);
-      const checkboxes = state.roster.map(s=>{
-        const checked = assigned.includes(s.id);
-        return `<label class="check-row" style="padding:6px 0;">
-          <input type="checkbox" class="upcoming-duty-chk" data-date="${ds}" data-id="${s.id}" ${checked?'checked':''} style="width:20px;height:20px;accent-color:var(--warn);">
-          <span style="font-size:13px;">${escapeHtml(s.name)}</span>
-        </label>`;
-      }).join('');
-      return `<div class="week-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div class="week-name">${formatDateVN(ds)}${i===0?' · hôm nay':''}</div>
-          <button class="save-upcoming-btn" data-date="${ds}" style="font-family:inherit;font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;border:none;background:var(--warn);color:#fff;cursor:pointer;">Lưu</button>
+      const selectedId = assigned[0] || '';
+      const options = `<option value="">— Chưa phân công —</option>` +
+        state.roster.map(s=>`<option value="${s.id}" ${s.id===selectedId?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+      return `<div class="row" style="gap:10px;align-items:center;">
+        <div style="flex:1;">
+          <div class="week-name" style="font-size:13px;">${formatDateVN(ds)}${i===0?' · hôm nay':''}</div>
         </div>
-        ${checkboxes}
+        <select class="upcoming-duty-sel sel" data-date="${ds}" style="width:auto;flex:1.2;">${options}</select>
+        <button class="save-upcoming-btn" data-date="${ds}" style="font-family:inherit;font-size:11px;font-weight:700;padding:6px 14px;border-radius:999px;border:none;background:var(--warn);color:#fff;cursor:pointer;white-space:nowrap;">Lưu</button>
       </div>`;
     }).join('');
     return `<main>${subtabs('laodong', [['today','Hôm nay'],['upcoming','Sắp tới'],['config','Cài đặt']])}
       <h2 class="section">Phân công 7 ngày tới</h2>
-      <p class="week-sub" style="margin-bottom:12px;">Tick chọn bạn trực nhật rồi bấm Lưu từng ngày.</p>
-      ${rows || emptyRoster()}
+      <div class="card">${rows || emptyRoster()}</div>
     </main>`;
   } else {
     return `<main>
@@ -1160,10 +1154,10 @@ function attachHandlers(){
   app.querySelectorAll('.save-upcoming-btn').forEach(btn=>{
     btn.onclick = async ()=>{
       const ds = btn.dataset.date;
-      const checked = [...app.querySelectorAll(`.upcoming-duty-chk[data-date="${ds}"]:checked`)].map(c=>c.dataset.id);
-      // Merge with existing duty record (keep checked/note if already saved)
+      const sel = app.querySelector(`.upcoming-duty-sel[data-date="${ds}"]`);
+      const chosen = sel && sel.value ? [sel.value] : [];
       const existing = await sget('duty:'+ds) || {};
-      await sset('duty:'+ds, {...existing, assigned: checked});
+      await sset('duty:'+ds, {...existing, assigned: chosen});
       btn.textContent = '✓'; btn.style.background = 'var(--ok)';
       setTimeout(()=>{ btn.textContent = 'Lưu'; btn.style.background = 'var(--warn)'; }, 1200);
       // Invalidate today's cache if date matches
