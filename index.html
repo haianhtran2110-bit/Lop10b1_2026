@@ -246,17 +246,20 @@ const PUBLIC_TABS = ['public'];
 const ROLE_LOGIN_KEY = { lt:'lop-truong', hoctap:'hoc-tap', laodong:'lao-dong', gvcn:'gvcn' };
 
 const CONG_CATEGORIES = [
-  {label:'Thực hiện tốt vai trò trong ban cán sự lớp', pts:10},
   {label:'Được nhà trường tuyên dương', pts:15},
+  {label:'Thực hiện tốt vai trò trong ban cán sự lớp (tháng)', pts:10},
   {label:'Đạt giải đội tuyển / phong trào (TDTT, văn nghệ, cuộc thi, HSG)', pts:10},
   {label:'Tham gia tích cực đội tuyển / phong trào', pts:5},
   {label:'Đến cổ vũ đội tuyển / phong trào', pts:2},
   {label:'Được khen / điểm tốt trong sổ đầu bài', pts:5},
   {label:'Được khen bởi GVBM', pts:5},
   {label:'Đến sớm 15 phút trong hoạt động ngoài giờ học', pts:2},
-  {label:'Có tiến bộ rõ rệt', pts:5},
+  {label:'Có tiến bộ rõ rệt trong học tập', pts:5},
   {label:'Giúp đỡ lớp, thầy cô, bạn bè', pts:5},
-  {label:'Hỗ trợ vệ sinh của lớp', pts:2},
+  {label:'Streak đủ 1 tuần đủ bài tập', pts:5},
+  {label:'Đến cổ vũ đội tuyển/ phong trào', pts:2},
+  {label:'Đến sớm 15 phút trong hoạt động ngoài giờ học', pts:2},
+  {label:'Hỗ trợ vệ sinh của lớp/ Hoàn thành trực nhật tốt (không tính khi đánh gậy)', pts:2},
 ];
 const VIPHAM_CATEGORIES = [
   {label:'Bạo lực học đường (ngôn từ, thể chất, tinh thần)', gay:6},
@@ -567,13 +570,15 @@ async function guarded(roleKey, renderFn){
 
 // ---------- PUBLIC VIEW ----------
 async function renderPublic(){
-  const [attRaw, studyRaw, discLog] = await Promise.all([
+  const [attRaw, studyRaw, discLog, dutyRaw] = await Promise.all([
     sget('attendance:'+state.date),
     sget('study:'+state.date),
     sget('discipline:log:'+state.month),
+    sget('duty:'+state.date),
   ]);
   const att = attRaw || {status:{}, phoneCount:0};
   const study = studyRaw || {status:{}};
+  const duty = dutyRaw || null;
   const log = Array.isArray(discLog) ? discLog : [];
 
   // Điểm danh
@@ -617,11 +622,29 @@ async function renderPublic(){
     </div>`).join('')
     : '<p class="empty">Chưa có dữ liệu tháng này.</p>';
 
+  // Trực nhật
+  const dutyNames = duty ? duty.assigned.map(id=>state.roster.find(s=>s.id===id)?.name||'?') : [];
+  const dutyCheck = duty?.checked;
+  const dutyCheckHtml = dutyCheck==='pass'
+    ? `<span style="color:var(--ok);font-weight:700;">✓ Đạt</span>`
+    : dutyCheck==='fail'
+    ? `<span style="color:var(--bad);font-weight:700;">✗ Chưa đạt</span>`
+    : `<span style="color:var(--muted);">Chưa kiểm tra</span>`;
+  const dutyHtml = `<div class="card">
+    <div class="row"><span class="name">🧹 Trực nhật hôm nay</span>${dutyCheckHtml}</div>
+    ${dutyNames.length
+      ? dutyNames.map(n=>`<div class="row"><span class="name" style="font-size:13px;">${escapeHtml(n)}</span></div>`).join('')
+      : '<p class="empty" style="padding:6px 0;">Chưa phân công</p>'}
+    ${duty?.note ? `<div class="week-sub" style="margin-top:4px;">Ghi chú: ${escapeHtml(duty.note)}</div>` : ''}
+  </div>`;
+
   return `<main>
     <h2 class="section">Điểm danh hôm nay</h2>
     ${attHtml}
     <h2 class="section">Học tập đầu giờ</h2>
     ${studyHtml}
+    <h2 class="section">Trực nhật hôm nay</h2>
+    ${dutyHtml}
     <h2 class="section">Ranking nền nếp <input type="month" id="monthInput" value="${state.month}" style="font-family:inherit;font-size:11px;border:1px solid var(--border);border-radius:8px;padding:3px 7px;background:var(--surf2);color:var(--text);margin-left:6px;letter-spacing:0;"></h2>
     <div class="card">${rankHtml}</div>
     <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:16px;">👀 Chỉ xem · không thể chỉnh sửa</p>
