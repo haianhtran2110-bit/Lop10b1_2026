@@ -183,6 +183,14 @@ textarea.note-input{resize:vertical;}
 .score-block .score-num{font-size:34px;font-weight:800;line-height:1;}
 .score-block .score-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
 
+/* DISCIPLINE CHIPS */
+.disc-chip{font-size:11px;padding:4px 9px;border-radius:20px;border:1.5px solid;background:transparent;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;line-height:1.4;white-space:nowrap;}
+.vipham-chip{border-color:var(--red);color:var(--red);}
+.vipham-chip.active{background:var(--red);color:#fff;}
+.cong-chip{border-color:var(--teal);color:var(--teal);}
+.cong-chip.active{background:var(--teal);color:#fff;}
+.disc-chip-label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;}
+
 /* SELECT */
 select,.sel{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:12px;padding:9px 10px;background:var(--surf2);color:var(--text);width:100%;-webkit-appearance:none;}
 label.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin:12px 0 4px;}
@@ -303,6 +311,7 @@ let state = {
   isViewer: false,
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
+let disciplineTicks = {}; // {studentId: [{type,category,value},...]} — reset mỗi ngày khi submit
 let ldDayData = null, ltData = null, htData = null, ldConfig = null;
 
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -332,6 +341,26 @@ async function sget(key){
     _cache[key] = val;
     return val;
   } catch(e){ console.error('sget failed', key, e); return null; }
+}
+async function sgetMany(keys){
+  // Lọc ra các key chưa có trong cache
+  const missing = keys.filter(k => !(k in _cache));
+  if(missing.length > 0){
+    try{
+      const url = `${API_URL}?action=getMany&keys=${encodeURIComponent(JSON.stringify(missing))}&token=${encodeURIComponent(API_TOKEN)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if(data.values){
+        Object.entries(data.values).forEach(([k,v])=>{
+          _cache[k] = v ? JSON.parse(v) : null;
+        });
+      }
+    } catch(e){ console.error('sgetMany failed', e); }
+  }
+  // Trả về object {key: value} cho tất cả keys được yêu cầu
+  const result = {};
+  keys.forEach(k => { result[k] = k in _cache ? _cache[k] : null; });
+  return result;
 }
 async function sset(key, value){
   _cache[key] = value; // cập nhật cache ngay, không chờ GAS
@@ -372,13 +401,14 @@ async function init(){
   setTimeout(()=>{
     const today = state.date;
     const month = state.month;
-    Promise.all([
-      sget('attendance:'+today),
-      sget('study:'+today),
-      sget('duty:'+today),
-      sget('duty:config'),
-      sget('discipline:log:'+month),
-      sget('assignments'),
+    // 1 request duy nhất thay vì 6 request riêng lẻ
+    sgetMany([
+      'attendance:'+today,
+      'study:'+today,
+      'duty:'+today,
+      'duty:config',
+      'discipline:log:'+month,
+      'assignments',
     ]);
   }, 100);
 }
@@ -583,12 +613,16 @@ async function guarded(roleKey, renderFn){
 
 // ---------- PUBLIC VIEW ----------
 async function renderPublic(){
-  const [attRaw, studyRaw, discLog, dutyRaw] = await Promise.all([
-    sget('attendance:'+state.date),
-    sget('study:'+state.date),
-    sget('discipline:log:'+state.month),
-    sget('duty:'+state.date),
+  const _batch1 = await sgetMany([
+    'attendance:'+state.date,
+    'study:'+state.date,
+    'discipline:log:'+state.month,
+    'duty:'+state.date,
   ]);
+  const attRaw = _batch1['attendance:'+state.date];
+  const studyRaw = _batch1['study:'+state.date];
+  const discLog = _batch1['discipline:log:'+state.month];
+  const dutyRaw = _batch1['duty:'+state.date];
   const att = attRaw || {status:{}, phoneCount:0};
   const study = studyRaw || {status:{}};
   const duty = dutyRaw || null;
@@ -941,45 +975,62 @@ async function renderKyLuat(subHtml){
   const students = state.roster.filter(s=> s.to === toNum);
   const log = await getMonthLog(state.month);
   const agg = aggregateLog(log);
-  const catList = disciplineForm.type === 'cong' ? CONG_CATEGORIES : VIPHAM_CATEGORIES;
-  const catOptions = catList.map(c=>`<option value="${escapeAttr(c.label)}" ${disciplineForm.category===c.label?'selected':''}>${escapeHtml(c.label)} (${disciplineForm.type==='cong'?'+'+c.pts+' đ':c.gay+' 🥢'})</option>`).join('') + `<option value="Khác" ${disciplineForm.category==='Khác'?'selected':''}>Khác (thảo luận với GVCN)</option>`;
-  const studentOptions = students.map(s=>`<option value="${s.id}" ${disciplineForm.studentId===s.id?'selected':''}>${escapeAttr(s.name)}</option>`).join('');
-  const isKhac = disciplineForm.category === 'Khác';
-  const color = ROLE_META.kyluat.color;
+  const isGVCN = state.unlocked['gvcn'];
 
-  const monthRows = [...students].sort((a,b)=>{
-    const aa = agg[a.id]||{cong:0,gay:0}, bb = agg[b.id]||{cong:0,gay:0};
-    if(bb.cong !== aa.cong) return bb.cong - aa.cong; // nhiều điểm cộng hơn lên trên
-    return aa.gay - bb.gay; // ít gậy hơn lên trên
-  }).map(s=>{
+  // --- Danh sách tick theo ngày ---
+  const studentCards = students.map(s=>{
     const a = agg[s.id] || {cong:0, gay:0};
     const tier = gayTier(a.gay);
-    const badges = quyenLoiTier(a.cong);
+    const ticks = disciplineTicks[s.id] || [];
+    const todaySummary = ticks.length
+      ? `<div style="font-size:12px;margin-top:4px;">`
+        + ticks.map(t=> t.type==='cong'
+          ? `<span style="color:var(--teal);font-weight:600;">+${t.value}đ ${escapeHtml(t.category)}</span>`
+          : `<span style="color:var(--red);font-weight:600;">${t.value}🥢 ${escapeHtml(t.category)}</span>`
+        ).join(' · ')
+        + `</div>`
+      : '';
+
+    const viphamChips = VIPHAM_CATEGORIES.map(c=>{
+      const active = ticks.some(t=>t.type==='vipham'&&t.category===c.label);
+      return `<button class="disc-chip vipham-chip${active?' active':''}" data-tick-sid="${s.id}" data-tick-type="vipham" data-tick-cat="${escapeAttr(c.label)}" data-tick-val="${c.gay}">${escapeHtml(c.label)} ${c.gay}🥢</button>`;
+    }).join('');
+
+    const congChips = CONG_CATEGORIES.map(c=>{
+      const active = ticks.some(t=>t.type==='cong'&&t.category===c.label);
+      return `<button class="disc-chip cong-chip${active?' active':''}" data-tick-sid="${s.id}" data-tick-type="cong" data-tick-cat="${escapeAttr(c.label)}" data-tick-val="${c.pts}">${escapeHtml(c.label)} +${c.pts}đ</button>`;
+    }).join('');
+
     return `<div class="card" style="margin-bottom:8px;">
       <div class="disc-summary">
         <span class="week-name">${escapeHtml(s.name)}</span>
-        <div style="display:flex;gap:14px;align-items:center;">
-          <div class="score-block"><div class="score-num" style="color:var(--teal);">+${a.cong}</div><div class="score-label" style="color:var(--teal);">điểm</div></div>
-          <div class="score-block"><div class="score-num" style="color:var(--red);">${a.gay}</div><div class="score-label" style="color:var(--red);">🥢</div></div>
-        </div>
+        <span style="font-size:12px;"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?` · <span style="color:var(--bad);font-size:11px;">${tier.label}</span>`:''}</span>
       </div>
-      ${tier ? `<div class="badge-flag">${tier.label}</div>` : ''}
-      ${badges.length ? `<div class="week-sub" style="margin-top:6px;color:var(--teal);">🎁 ${badges.join(' · ')}</div>` : ''}
+      ${todaySummary}
+      <div class="disc-chip-label" style="margin-top:10px;">Vi phạm</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${viphamChips}</div>
+      <div class="disc-chip-label">Điểm cộng</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
     </div>`;
   }).join('');
 
-  const isGVCN = state.unlocked['gvcn'];
+  const totalTicks = Object.values(disciplineTicks).reduce((s,arr)=>s+arr.length,0);
+  const submitBtn = totalTicks > 0
+    ? `<button class="primary-btn" data-act="submit-ticks" style="background:var(--accent);margin-bottom:4px;">✓ Ghi nhận ${totalTicks} mục — ${formatDateVN(state.date)}</button>`
+    : '';
+
+  // --- Nhật ký ---
   const recent = log.filter(e=> students.some(s=>s.id===e.studentId))
-    .slice().sort((a,b)=> b.value - a.value).slice(0,20).map(e=>{
+    .slice().sort((a,b)=>b.date>a.date?1:b.date<a.date?-1:0).slice(0,30).map(e=>{
     const name = state.roster.find(s=>s.id===e.studentId)?.name || '(đã xoá)';
     const isCong = e.type==='cong';
     return `<div class="disc-entry" data-disc-id="${e.id}">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
         <span style="flex:1;"><b>${escapeHtml(name)}</b> — <span style="color:var(--muted);">${escapeHtml(e.category)}${e.note?(' · '+escapeHtml(e.note)):''}</span></span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span>
-          ${isGVCN ? `<button data-act="edit-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" data-disc-value="${e.value}" data-disc-type="${e.type}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;">✏️</button>` : ''}
-          ${isGVCN ? `<button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>` : ''}
+          <span class="disc-pts ${isCong?'pos':'neg'}">${isCong?'+'+e.value+'đ':e.value+' 🥢'}</span>
+          ${isGVCN?`<button data-act="edit-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" data-disc-value="${e.value}" data-disc-type="${e.type}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;">✏️</button>`:''}
+          ${isGVCN?`<button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>`:''}
         </div>
       </div>
       <div class="week-sub">${formatDateVN(e.date)}</div>
@@ -987,37 +1038,29 @@ async function renderKyLuat(subHtml){
   }).join('');
 
   return `<main>${subHtml}
-    <h2 class="section">Ghi nhận — Tổ ${toNum}</h2>
-    <div class="card">
-      <div class="seg" style="width:100%;margin-bottom:12px;">
-        <button data-form-type="cong" style="flex:1;${disciplineForm.type==='cong'?'background:var(--teal);color:#000;':''}">⬆ Điểm cộng</button>
-        <button data-form-type="vipham" style="flex:1;${disciplineForm.type==='vipham'?'background:var(--red);color:#fff;':''}">🥢 Vi phạm</button>
-      </div>
-      <label class="field-label">Học sinh — Tổ ${toNum}</label>
-      <select class="sel" id="discStudent" style="margin-top:0;">${studentOptions || '<option value="">— chưa có bạn nào —</option>'}</select>
-      <label class="field-label">Danh mục</label>
-      <select class="sel" id="discCategory" style="margin-top:0;">${catOptions}</select>
-      ${isKhac ? `<label class="field-label">${disciplineForm.type==='cong'?'Số điểm cộng':'Số gậy'}</label><input type="text" inputmode="numeric" class="note-input" id="discCustomValue" placeholder="Nhập số, đã thảo luận với GVCN" style="margin-top:0;">` : ''}
-      <label class="field-label">Ghi chú (tuỳ chọn)</label>
-      <input type="text" class="note-input" id="discNote" placeholder="Chi tiết cụ thể…" style="margin-top:0;">
-      <button class="primary-btn" style="background:${color};" data-act="add-disc">Lưu ghi nhận</button>
-    </div>
-    <h2 class="section">Tổng hợp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
-    ${monthRows || emptyRoster()}
-    <h2 class="section">Nhật ký — Tổ ${toNum}</h2>
+    <h2 class="section">📋 Tổ ${toNum} — ${formatDateVN(state.date)}</h2>
+    ${studentCards || emptyRoster()}
+    ${submitBtn}
+    <h2 class="section">Nhật ký tháng <input type="month" id="monthInput" value="${state.month}"></h2>
     <div class="card">${recent || '<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
   </main>`;
 }
 
 async function renderGVCN(){
   const months3 = prevMonths(state.month, 3);
-  const [attRaw, studyRaw, dutyRaw, assign, ...logsByMonth] = await Promise.all([
-    sget('attendance:'+state.date),
-    sget('study:'+state.date),
-    sget('duty:'+state.date),
-    sget('assignments'),
-    ...months3.map(m=> getMonthLog(m))
-  ]);
+  const _batchKeys = [
+    'attendance:'+state.date,
+    'study:'+state.date,
+    'duty:'+state.date,
+    'assignments',
+    ...months3.map(m=>'discipline:log:'+m),
+  ];
+  const _batchG = await sgetMany(_batchKeys);
+  const attRaw = _batchG['attendance:'+state.date];
+  const studyRaw = _batchG['study:'+state.date];
+  const dutyRaw = _batchG['duty:'+state.date];
+  const assign = _batchG['assignments'];
+  const logsByMonth = months3.map(m=> { const v = _batchG['discipline:log:'+m]; return Array.isArray(v)?v:[]; });
   const att = attRaw || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
   const lateList=[], absentList=[];
   state.roster.forEach(s=>{ const st=att.status[s.id]||'present'; if(st==='late') lateList.push(s.name); else if(st==='absent') absentList.push(s.name); });
@@ -1087,6 +1130,23 @@ async function renderGVCN(){
   </main>`;
 }
 
+async function submitTicksHandler(){
+  const entries = [];
+  Object.entries(disciplineTicks).forEach(([sid, ticks])=>{
+    ticks.forEach(t=>{
+      entries.push({id:uid(), studentId:sid, type:t.type, category:t.category, value:t.value, note:'', date:state.date});
+    });
+  });
+  if(!entries.length) return;
+  const entryMonth = monthOf(state.date);
+  const log = await getMonthLog(entryMonth);
+  const newLog = [...log, ...entries];
+  await sset('discipline:log:'+entryMonth, newLog);
+  disciplineTicks = {};
+  showToast(`✓ Đã ghi nhận ${entries.length} mục cho ${formatDateVN(state.date)}`);
+  renderAsync();
+}
+
 function attachHandlers(){
   const app = document.getElementById('app');
 
@@ -1102,7 +1162,7 @@ function attachHandlers(){
     };
   });
   const dateInput = document.getElementById('dateInput');
-  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; renderAsync(); };
+  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; disciplineTicks = {}; renderAsync(); };
   const todayBtn = app.querySelector('[data-act="today"]');
   if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
   // (no theme toggle)
@@ -1207,36 +1267,62 @@ function attachHandlers(){
     renderAsync();
   };
 
-  app.querySelectorAll('[data-form-type]').forEach(btn=>{
-    btn.onclick = ()=>{ disciplineForm.type = btn.dataset.formType; disciplineForm.category=''; renderAsync(); };
+  // --- Chip toggle (không cần re-render, chỉ update DOM + state) ---
+  app.querySelectorAll('.disc-chip').forEach(btn=>{
+    btn.onclick = ()=>{
+      const sid = btn.dataset.tickSid;
+      const type = btn.dataset.tickType;
+      const cat = btn.dataset.tickCat;
+      const val = parseInt(btn.dataset.tickVal);
+      if(!disciplineTicks[sid]) disciplineTicks[sid] = [];
+      const idx = disciplineTicks[sid].findIndex(t=>t.type===type && t.category===cat);
+      if(idx >= 0){
+        disciplineTicks[sid].splice(idx,1);
+        btn.classList.remove('active');
+      } else {
+        disciplineTicks[sid].push({type, category:cat, value:val});
+        btn.classList.add('active');
+      }
+      // Cập nhật dòng tóm tắt hôm nay của học sinh này
+      const card = btn.closest('.card');
+      const ticks = disciplineTicks[sid] || [];
+      let sumEl = card.querySelector('.today-summary');
+      if(!sumEl){
+        sumEl = document.createElement('div');
+        sumEl.className = 'today-summary';
+        sumEl.style.cssText = 'font-size:12px;margin-top:4px;';
+        card.querySelector('.disc-summary').after(sumEl);
+      }
+      sumEl.innerHTML = ticks.length
+        ? ticks.map(t=> t.type==='cong'
+            ? `<span style="color:var(--teal);font-weight:600;">+${t.value}đ ${escapeHtml(t.category)}</span>`
+            : `<span style="color:var(--red);font-weight:600;">${t.value}🥢 ${escapeHtml(t.category)}</span>`
+          ).join(' · ')
+        : '';
+      // Cập nhật nút submit
+      const total = Object.values(disciplineTicks).reduce((s,a)=>s+a.length,0);
+      let subBtn = app.querySelector('[data-act="submit-ticks"]');
+      if(total > 0){
+        if(!subBtn){
+          subBtn = document.createElement('button');
+          subBtn.className = 'primary-btn';
+          subBtn.dataset.act = 'submit-ticks';
+          subBtn.style.cssText = 'background:var(--accent);margin-bottom:4px;';
+          // Chèn trước section nhật ký
+          const nhatkyH2 = [...app.querySelectorAll('h2.section')].find(h=>h.textContent.includes('Nhật ký'));
+          if(nhatkyH2) nhatkyH2.before(subBtn);
+          else app.querySelector('main').appendChild(subBtn);
+          subBtn.onclick = submitTicksHandler;
+        }
+        subBtn.textContent = `✓ Ghi nhận ${total} mục — ${formatDateVN(state.date)}`;
+      } else if(subBtn){
+        subBtn.remove();
+      }
+    };
   });
-  const discStudentSel = document.getElementById('discStudent');
-  if(discStudentSel) discStudentSel.onchange = ()=>{ disciplineForm.studentId = discStudentSel.value; };
-  const discCatSel = document.getElementById('discCategory');
-  if(discCatSel) discCatSel.onchange = ()=>{ disciplineForm.category = discCatSel.value; renderAsync(); };
-  const addDiscBtn = app.querySelector('[data-act="add-disc"]');
-  if(addDiscBtn) addDiscBtn.onclick = async ()=>{
-    const studentId = document.getElementById('discStudent').value;
-    const category = document.getElementById('discCategory').value;
-    const note = document.getElementById('discNote').value.trim();
-    if(!studentId){ showToast('Chọn học sinh trước đã'); return; }
-    let value;
-    if(category === 'Khác'){
-      value = parseInt(document.getElementById('discCustomValue').value);
-      if(isNaN(value)){ showToast('Nhập số điểm/gậy hợp lệ'); return; }
-    } else {
-      const list = disciplineForm.type==='cong' ? CONG_CATEGORIES : VIPHAM_CATEGORIES;
-      const found = list.find(c=>c.label===category);
-      value = disciplineForm.type==='cong' ? found.pts : found.gay;
-    }
-    const entryMonth = monthOf(state.date);
-    const log = await getMonthLog(entryMonth);
-    log.push({id:uid(), studentId, type:disciplineForm.type, category, value, note, date: state.date});
-    await sset('discipline:log:'+entryMonth, log);
-    showToast('✓ Đã lưu ghi nhận');
-    disciplineForm.studentId=''; disciplineForm.category='';
-    renderAsync();
-  };
+  // Gắn handler cho nút submit nếu đã render sẵn (trường hợp re-render khi đã có ticks)
+  const existingSubBtn = app.querySelector('[data-act="submit-ticks"]');
+  if(existingSubBtn) existingSubBtn.onclick = submitTicksHandler;
 
   app.querySelectorAll('[data-act="edit-disc"]').forEach(btn=>{
     btn.onclick = async ()=>{
