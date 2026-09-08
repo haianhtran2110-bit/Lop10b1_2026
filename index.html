@@ -315,9 +315,8 @@ let state = {
   isViewer: false,
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
-let disciplineTicks = {}; // {studentId: [{type,category,value},...]} — reset sau khi submit
-let activeTickCat = null; // unused legacy
-let selectedStudents = new Set(); // studentIds đang được chọn để gán lỗi/thưởng
+let discPending = []; // [{studentId, type, category, value}] — giỏ chờ lưu
+let discWizard = {open:false, step:1, type:null, cats:new Set(), studs:new Set(), pairs:[]};
 let ldDayData = null, ltData = null, htData = null, ldConfig = null;
 
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -982,43 +981,106 @@ async function renderKyLuat(subHtml){
   const log = await getMonthLog(state.month);
   const agg = aggregateLog(log);
   const isGVCN = state.unlocked['gvcn'];
+  const dw = discWizard;
 
-  // --- BƯỚC 1: Chips học sinh ---
-  const stuChips = students.map(s=>{
-    const isSel = selectedStudents.has(s.id);
-    const ticks = disciplineTicks[s.id] || [];
-    const badge = ticks.length ? ` <span style="font-size:10px;background:var(--accent);color:#fff;border-radius:10px;padding:1px 5px;vertical-align:middle;">${ticks.length}</span>` : '';
-    return `<button class="stu-chip${isSel?' stu-chip-active':''}" data-stu-id="${s.id}">${escapeHtml(s.name)}${badge}</button>`;
+  // ── Danh sách học sinh tháng này ──
+  const stuRows = students.map(s=>{
+    const a = agg[s.id]||{cong:0,gay:0};
+    const pend = discPending.filter(p=>p.studentId===s.id).length;
+    const pendBadge = pend ? `<span style="font-size:10px;background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;margin-left:5px;">${pend} chờ</span>` : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--border);">
+      <span style="font-size:14px;">${escapeHtml(s.name)}${pendBadge}</span>
+      <div style="display:flex;gap:10px;font-size:12px;">
+        ${a.cong>0?`<span style="color:var(--teal);font-weight:600;">+${a.cong}đ</span>`:''}
+        ${a.gay>0?`<span style="color:var(--red);font-weight:600;">${a.gay}🥢</span>`:''}
+        ${!a.cong&&!a.gay?`<span style="color:var(--muted);">—</span>`:''}
+      </div>
+    </div>`;
   }).join('');
 
-  // --- BƯỚC 2: Panel lỗi (hiện khi có học sinh được chọn) ---
-  const hasSel = selectedStudents.size > 0;
-  const selNames = students.filter(s=>selectedStudents.has(s.id)).map(s=>escapeHtml(s.name)).join(', ');
-  const viphamChips = VIPHAM_CATEGORIES.map(c=>{
-    return `<button class="disc-chip vipham-chip" data-cat-type="vipham" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.gay}">${escapeHtml(c.label)} ${c.gay}🥢</button>`;
-  }).join('');
-  const congChips = CONG_CATEGORIES.map(c=>{
-    return `<button class="disc-chip cong-chip" data-cat-type="cong" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.pts}">${escapeHtml(c.label)} +${c.pts}đ</button>`;
-  }).join('');
+  // ── Wizard ghi nhận nhanh ──
+  let wizardHtml = '';
+  if(!dw.open){
+    wizardHtml = `<button class="primary-btn" data-act="open-wiz" style="background:var(--accent);margin-bottom:0;">+ Ghi nhận</button>`;
+  } else {
+    const STEP_LABELS = ['','Loại','Hành vi','Học sinh'];
+    const curStep = dw.step === 'review' ? 3 : dw.step;
+    const stepBar = [1,2,3].map(i=>`<div style="flex:1;padding:5px 0;text-align:center;font-size:11px;font-weight:700;background:${curStep>=i?'var(--accent)':'var(--card)'};color:${curStep>=i?'#fff':'var(--muted)'};">${i} ${STEP_LABELS[i]}</div>`).join('');
 
-  const catPanel = hasSel ? `<div class="card cat-panel" style="margin-top:0;border-top:3px solid var(--accent);">
-    <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px;letter-spacing:.03em;">→ ${selNames}</div>
-    <div class="disc-chip-label">Vi phạm</div>
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${viphamChips}</div>
-    <div class="disc-chip-label">Điểm cộng</div>
-    <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
-  </div>` : `<p class="empty" style="margin:4px 0 8px;font-size:13px;">Chạm vào học sinh để chọn, rồi chọn lỗi/thưởng bên dưới</p>`;
+    let stepBody = '';
+    if(dw.step === 1){
+      stepBody = `<div style="display:flex;gap:10px;margin-top:6px;">
+        <button data-wiz-type="vipham" style="flex:1;padding:18px 8px;border-radius:12px;border:2px solid var(--red);background:transparent;color:var(--red);font-size:22px;cursor:pointer;font-family:inherit;line-height:1.4;">🥢<br><span style="font-size:13px;font-weight:700;">Vi phạm</span></button>
+        <button data-wiz-type="cong" style="flex:1;padding:18px 8px;border-radius:12px;border:2px solid var(--teal);background:transparent;color:var(--teal);font-size:22px;cursor:pointer;font-family:inherit;line-height:1.4;">⭐<br><span style="font-size:13px;font-weight:700;">Điểm cộng</span></button>
+      </div>`;
+    } else if(dw.step === 2){
+      const isVP = dw.type==='vipham';
+      const cats = isVP ? VIPHAM_CATEGORIES : CONG_CATEGORIES;
+      const chips = cats.map(c=>{
+        const val = isVP ? c.gay : c.pts;
+        const isSel = dw.cats.has(c.label);
+        return `<button class="disc-chip ${isVP?'vipham':'cong'}-chip${isSel?' active':''}" data-wiz-cat="${escapeAttr(c.label)}" data-wiz-catval="${val}">${escapeHtml(c.label)} ${isVP?val+'🥢':'+'+val+'đ'}</button>`;
+      }).join('');
+      stepBody = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;">${chips}</div>
+        ${dw.cats.size>0
+          ? `<button class="primary-btn" data-wiz-next style="margin-top:2px;">Tiếp theo → <span style="font-weight:400;font-size:12px;">(${dw.cats.size} đã chọn)</span></button>`
+          : `<p class="empty" style="margin:4px 0;font-size:12px;">Chọn ít nhất 1 hành vi</p>`}`;
+    } else if(dw.step === 3){
+      const stuChips = students.map(s=>{
+        const isSel = dw.studs.has(s.id);
+        return `<button class="stu-chip${isSel?' stu-chip-active':''}" data-wiz-stu="${s.id}">${escapeHtml(s.name)}</button>`;
+      }).join('');
+      stepBody = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;">${stuChips}</div>
+        ${dw.studs.size>0
+          ? `<button class="primary-btn" data-wiz-review style="margin-top:2px;">Xem trước → <span style="font-weight:400;font-size:12px;">(${dw.studs.size} học sinh)</span></button>`
+          : `<p class="empty" style="margin:4px 0;font-size:12px;">Chọn ít nhất 1 học sinh</p>`}`;
+    } else if(dw.step === 'review'){
+      const stuCount = new Set(dw.pairs.map(p=>p.sid)).size;
+      const reviewRows = dw.pairs.map((p,i)=>{
+        const isVP = p.type==='vipham';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border);">
+          <span style="font-size:13px;"><b>${escapeHtml(p.name)}</b> — ${escapeHtml(p.cat)} <span style="color:${isVP?'var(--red)':'var(--teal)'};">${isVP?p.val+'🥢':'+'+p.val+'đ'}</span></span>
+          <button data-wiz-remove="${i}" style="background:none;border:none;color:var(--bad);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>
+        </div>`;
+      }).join('');
+      stepBody = `<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Hệ thống sẽ tạo <b style="color:var(--text);">${dw.pairs.length} ghi nhận</b> cho <b style="color:var(--text);">${stuCount} học sinh</b></div>
+        ${reviewRows}
+        <button class="primary-btn" data-wiz-confirm style="margin-top:10px;background:var(--accent);">✓ Thêm vào danh sách chờ</button>`;
+    }
 
-  // --- Tóm tắt đã ghi nhận (pending) ---
-  const totalTicks = Object.values(disciplineTicks).reduce((s,arr)=>s+arr.length,0);
-  const tickSummaryRows = totalTicks > 0 ? Object.entries(disciplineTicks).flatMap(([sid, ticks])=>
-    ticks.map(t=>{
-      const name = students.find(s=>s.id===sid)?.name || '';
-      return name ? `<div style="font-size:12px;padding:2px 0;">${escapeHtml(name)}: ${t.type==='cong'?`<span style="color:var(--teal);font-weight:600;">+${t.value}đ ${escapeHtml(t.category)}</span>`:`<span style="color:var(--red);font-weight:600;">${t.value}🥢 ${escapeHtml(t.category)}</span>`}</div>` : '';
-    })
-  ).filter(Boolean).join('') : '';
+    const showBack = dw.step !== 1;
+    wizardHtml = `<div class="card" style="border:2px solid var(--accent);margin-bottom:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;">Ghi nhận nhanh</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${showBack?`<button data-wiz-back style="background:none;border:1px solid var(--border);border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted);">← Quay</button>`:''}
+          <button data-act="close-wiz" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:0 2px;line-height:1;">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;border-radius:8px;overflow:hidden;margin-bottom:10px;">${stepBar}</div>
+      ${stepBody}
+    </div>`;
+  }
 
-  // --- Nhật ký ---
+  // ── Giỏ chờ (pending basket) ──
+  let pendingHtml = '';
+  if(discPending.length > 0){
+    const rows = discPending.map((p,i)=>{
+      const name = students.find(s=>s.id===p.studentId)?.name || '?';
+      const isVP = p.type==='vipham';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--border);">
+        <span style="font-size:12px;">${escapeHtml(name)} — ${escapeHtml(p.category)} <span style="color:${isVP?'var(--red)':'var(--teal)'};">${isVP?p.value+'🥢':'+'+p.value+'đ'}</span></span>
+        <button data-pend-remove="${i}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>
+      </div>`;
+    }).join('');
+    pendingHtml = `<div class="card" style="margin-top:0;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:2px;">DANH SÁCH CHỜ — ${discPending.length} mục</div>
+      ${rows}
+    </div>
+    <button class="primary-btn" data-act="submit-ticks" style="background:var(--accent);margin-bottom:4px;">✓ Lưu ${discPending.length} mục — ${formatDateVN(state.date)}</button>`;
+  }
+
+  // ── Nhật ký ──
   const recent = log.filter(e=> students.some(s=>s.id===e.studentId))
     .slice().sort((a,b)=>b.date>a.date?1:b.date<a.date?-1:0).slice(0,30).map(e=>{
     const name = state.roster.find(s=>s.id===e.studentId)?.name || '(đã xoá)';
@@ -1038,15 +1100,9 @@ async function renderKyLuat(subHtml){
 
   return `<main>${subHtml}
     <h2 class="section">📋 Tổ ${toNum} — ${formatDateVN(state.date)}</h2>
-    <div class="card" style="padding-bottom:10px;">
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">${stuChips}</div>
-    </div>
-    ${catPanel}
-    ${totalTicks > 0 ? `<div class="card" style="margin-top:0;">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:4px;">ĐÃ CHỌN:</div>
-      ${tickSummaryRows}
-    </div>
-    <button class="primary-btn" data-act="submit-ticks" style="background:var(--accent);margin-bottom:4px;">✓ Ghi nhận ${totalTicks} mục — ${formatDateVN(state.date)}</button>` : ''}
+    ${wizardHtml}
+    ${pendingHtml}
+    <div class="card">${stuRows || '<p class="empty">Không có học sinh.</p>'}</div>
     <h2 class="section">Nhật ký tháng <input type="month" id="monthInput" value="${state.month}"></h2>
     <div class="card">${recent || '<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
   </main>`;
@@ -1137,19 +1193,14 @@ async function renderGVCN(){
 }
 
 async function submitTicksHandler(){
-  const entries = [];
-  Object.entries(disciplineTicks).forEach(([sid, ticks])=>{
-    ticks.forEach(t=>{
-      entries.push({id:uid(), studentId:sid, type:t.type, category:t.category, value:t.value, note:'', date:state.date});
-    });
-  });
-  if(!entries.length) return;
+  if(!discPending.length) return;
+  const entries = discPending.map(p=>({id:uid(), studentId:p.studentId, type:p.type, category:p.category, value:p.value, note:'', date:state.date}));
   const entryMonth = monthOf(state.date);
   const log = await getMonthLog(entryMonth);
   const newLog = [...log, ...entries];
   await sset('discipline:log:'+entryMonth, newLog);
-  disciplineTicks = {};
-  selectedStudents.clear();
+  discPending = [];
+  discWizard = {open:false, step:1, type:null, cats:new Set(), studs:new Set(), pairs:[]};
   showToast(`✓ Đã ghi nhận ${entries.length} mục cho ${formatDateVN(state.date)}`);
   renderAsync();
 }
@@ -1169,7 +1220,7 @@ function attachHandlers(){
     };
   });
   const dateInput = document.getElementById('dateInput');
-  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; disciplineTicks = {}; selectedStudents.clear(); renderAsync(); };
+  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; discPending=[]; discWizard={open:false,step:1,type:null,cats:new Set(),studs:new Set(),pairs:[]}; renderAsync(); };
   const todayBtn = app.querySelector('[data-act="today"]');
   if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
   // (no theme toggle)
@@ -1274,34 +1325,80 @@ function attachHandlers(){
     renderAsync();
   };
 
-  // --- Student chip toggle ---
-  app.querySelectorAll('.stu-chip').forEach(btn=>{
+  // ── Wizard handlers ──
+  const openWizBtn = app.querySelector('[data-act="open-wiz"]');
+  if(openWizBtn) openWizBtn.onclick = ()=>{ discWizard={open:true,step:1,type:null,cats:new Set(),studs:new Set(),pairs:[]}; renderAsync(); };
+  const closeWizBtn = app.querySelector('[data-act="close-wiz"]');
+  if(closeWizBtn) closeWizBtn.onclick = ()=>{ discWizard.open=false; renderAsync(); };
+  // Bước 1: chọn loại
+  app.querySelectorAll('[data-wiz-type]').forEach(btn=>{
+    btn.onclick = ()=>{ discWizard.type=btn.dataset.wizType; discWizard.step=2; renderAsync(); };
+  });
+  // Bước 2: toggle hành vi
+  app.querySelectorAll('[data-wiz-cat]').forEach(btn=>{
     btn.onclick = ()=>{
-      const sid = btn.dataset.stuId;
-      if(selectedStudents.has(sid)) selectedStudents.delete(sid);
-      else selectedStudents.add(sid);
+      const cat = btn.dataset.wizCat;
+      if(discWizard.cats.has(cat)) discWizard.cats.delete(cat); else discWizard.cats.add(cat);
       renderAsync();
     };
   });
-  // --- Category chip → assign to selected students → clear selection ---
-  app.querySelectorAll('[data-cat-type]').forEach(btn=>{
+  const wizNextBtn = app.querySelector('[data-wiz-next]');
+  if(wizNextBtn) wizNextBtn.onclick = ()=>{ discWizard.step=3; renderAsync(); };
+  // Bước 3: toggle học sinh
+  app.querySelectorAll('[data-wiz-stu]').forEach(btn=>{
     btn.onclick = ()=>{
-      if(selectedStudents.size === 0) return;
-      const type = btn.dataset.catType;
-      const cat = btn.dataset.catLabel;
-      const val = parseInt(btn.dataset.catVal);
-      selectedStudents.forEach(sid=>{
-        if(!disciplineTicks[sid]) disciplineTicks[sid] = [];
-        // Không thêm trùng cùng loại + category
-        if(!disciplineTicks[sid].some(t=>t.type===type && t.category===cat)){
-          disciplineTicks[sid].push({type, category:cat, value:val});
-        }
+      const sid = btn.dataset.wizStu;
+      if(discWizard.studs.has(sid)) discWizard.studs.delete(sid); else discWizard.studs.add(sid);
+      renderAsync();
+    };
+  });
+  // Chuyển sang review: tạo danh sách pairs
+  const wizReviewBtn = app.querySelector('[data-wiz-review]');
+  if(wizReviewBtn) wizReviewBtn.onclick = ()=>{
+    const toNum2 = parseInt(state.sub.kyluat.split('-')[1]);
+    const stus = state.roster.filter(s=>s.to===toNum2);
+    const pairs = [];
+    discWizard.studs.forEach(sid=>{
+      const name = stus.find(s=>s.id===sid)?.name||'?';
+      discWizard.cats.forEach(cat=>{
+        const isVP = discWizard.type==='vipham';
+        const catObj = isVP ? VIPHAM_CATEGORIES.find(c=>c.label===cat) : CONG_CATEGORIES.find(c=>c.label===cat);
+        const val = isVP ? catObj?.gay : catObj?.pts;
+        pairs.push({sid, name, type:discWizard.type, cat, val});
       });
-      selectedStudents.clear();
+    });
+    discWizard.pairs = pairs;
+    discWizard.step = 'review';
+    renderAsync();
+  };
+  // Review: xóa 1 cặp
+  app.querySelectorAll('[data-wiz-remove]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = parseInt(btn.dataset.wizRemove);
+      discWizard.pairs.splice(idx,1);
+      if(!discWizard.pairs.length) discWizard.step=3;
       renderAsync();
     };
   });
-  // --- Submit ticks ---
+  // Confirm: thêm vào pending, reset wizard về bước 1
+  const wizConfirmBtn = app.querySelector('[data-wiz-confirm]');
+  if(wizConfirmBtn) wizConfirmBtn.onclick = ()=>{
+    discWizard.pairs.forEach(p=>{ discPending.push({studentId:p.sid, type:p.type, category:p.cat, value:p.val}); });
+    discWizard = {open:true, step:1, type:null, cats:new Set(), studs:new Set(), pairs:[]};
+    renderAsync();
+  };
+  // Quay lại
+  const wizBackBtn = app.querySelector('[data-wiz-back]');
+  if(wizBackBtn) wizBackBtn.onclick = ()=>{
+    if(discWizard.step==='review') discWizard.step=3;
+    else if(typeof discWizard.step==='number' && discWizard.step>1) discWizard.step--;
+    renderAsync();
+  };
+  // Xóa 1 mục trong pending
+  app.querySelectorAll('[data-pend-remove]').forEach(btn=>{
+    btn.onclick = ()=>{ discPending.splice(parseInt(btn.dataset.pendRemove),1); renderAsync(); };
+  });
+  // Submit tất cả
   const existingSubBtn = app.querySelector('[data-act="submit-ticks"]');
   if(existingSubBtn) existingSubBtn.onclick = submitTicksHandler;
 
