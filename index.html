@@ -184,6 +184,8 @@ textarea.note-input{resize:vertical;}
 .score-block .score-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
 
 /* DISCIPLINE CHIPS */
+.stu-chip{font-size:13px;padding:7px 13px;border-radius:20px;border:1.5px solid var(--border);background:transparent;cursor:pointer;font-family:inherit;transition:background .15s,color .15s,border-color .15s;line-height:1.4;color:var(--text);}
+.stu-chip-active{border-color:var(--accent);background:var(--accent);color:#fff;}
 .disc-chip{font-size:11px;padding:4px 9px;border-radius:20px;border:1.5px solid;background:transparent;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;line-height:1.4;white-space:nowrap;}
 .vipham-chip{border-color:var(--red);color:var(--red);}
 .vipham-chip.active{background:var(--red);color:#fff;}
@@ -314,7 +316,8 @@ let state = {
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
 let disciplineTicks = {}; // {studentId: [{type,category,value},...]} — reset sau khi submit
-let activeTickCat = null; // {type, category, value} — category chip đang chọn
+let activeTickCat = null; // unused legacy
+let selectedStudents = new Set(); // studentIds đang được chọn để gán lỗi/thưởng
 let ldDayData = null, ltData = null, htData = null, ldConfig = null;
 
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -980,35 +983,40 @@ async function renderKyLuat(subHtml){
   const agg = aggregateLog(log);
   const isGVCN = state.unlocked['gvcn'];
 
-  // --- BƯỚC 1: Chips chọn loại vi phạm / thưởng ---
-  const ac = activeTickCat;
+  // --- BƯỚC 1: Chips học sinh ---
+  const stuChips = students.map(s=>{
+    const isSel = selectedStudents.has(s.id);
+    const ticks = disciplineTicks[s.id] || [];
+    const badge = ticks.length ? ` <span style="font-size:10px;background:var(--accent);color:#fff;border-radius:10px;padding:1px 5px;vertical-align:middle;">${ticks.length}</span>` : '';
+    return `<button class="stu-chip${isSel?' stu-chip-active':''}" data-stu-id="${s.id}">${escapeHtml(s.name)}${badge}</button>`;
+  }).join('');
+
+  // --- BƯỚC 2: Panel lỗi (hiện khi có học sinh được chọn) ---
+  const hasSel = selectedStudents.size > 0;
+  const selNames = students.filter(s=>selectedStudents.has(s.id)).map(s=>escapeHtml(s.name)).join(', ');
   const viphamChips = VIPHAM_CATEGORIES.map(c=>{
-    const isSel = ac && ac.type==='vipham' && ac.category===c.label;
-    return `<button class="disc-chip vipham-chip${isSel?' active':''}" data-cat-type="vipham" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.gay}">${escapeHtml(c.label)} ${c.gay}🥢</button>`;
+    return `<button class="disc-chip vipham-chip" data-cat-type="vipham" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.gay}">${escapeHtml(c.label)} ${c.gay}🥢</button>`;
   }).join('');
   const congChips = CONG_CATEGORIES.map(c=>{
-    const isSel = ac && ac.type==='cong' && ac.category===c.label;
-    return `<button class="disc-chip cong-chip${isSel?' active':''}" data-cat-type="cong" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.pts}">${escapeHtml(c.label)} +${c.pts}đ</button>`;
+    return `<button class="disc-chip cong-chip" data-cat-type="cong" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.pts}">${escapeHtml(c.label)} +${c.pts}đ</button>`;
   }).join('');
 
-  // --- BƯỚC 2: Danh sách học sinh để tick (chỉ hiện khi đã chọn category) ---
-  const studentList = ac ? students.map(s=>{
-    const checked = (disciplineTicks[s.id]||[]).some(t=>t.type===ac.type && t.category===ac.category);
-    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer;">
-      <input type="checkbox" class="tick-stu-cb" data-sid="${s.id}" ${checked?'checked':''} style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">
-      <span style="flex:1;font-size:14px;font-weight:500;">${escapeHtml(s.name)}</span>
-      <span style="font-size:12px;color:var(--muted);">${(disciplineTicks[s.id]||[]).map(t=>t.type==='cong'?`<span style="color:var(--teal);">+${t.value}đ</span>`:`<span style="color:var(--red);">${t.value}🥢</span>`).join(' ')}</span>
-    </label>`;
-  }).join('') : '';
+  const catPanel = hasSel ? `<div class="card cat-panel" style="margin-top:0;border-top:3px solid var(--accent);">
+    <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px;letter-spacing:.03em;">→ ${selNames}</div>
+    <div class="disc-chip-label">Vi phạm</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${viphamChips}</div>
+    <div class="disc-chip-label">Điểm cộng</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
+  </div>` : `<p class="empty" style="margin:4px 0 8px;font-size:13px;">Chạm vào học sinh để chọn, rồi chọn lỗi/thưởng bên dưới</p>`;
 
-  // --- Tóm tắt đã tick ---
+  // --- Tóm tắt đã ghi nhận (pending) ---
   const totalTicks = Object.values(disciplineTicks).reduce((s,arr)=>s+arr.length,0);
   const tickSummaryRows = totalTicks > 0 ? Object.entries(disciplineTicks).flatMap(([sid, ticks])=>
     ticks.map(t=>{
       const name = students.find(s=>s.id===sid)?.name || '';
-      return name ? `<span style="font-size:12px;">${escapeHtml(name)}: ${t.type==='cong'?`<span style="color:var(--teal);">+${t.value}đ ${escapeHtml(t.category)}</span>`:`<span style="color:var(--red);">${t.value}🥢 ${escapeHtml(t.category)}</span>`}</span>` : '';
+      return name ? `<div style="font-size:12px;padding:2px 0;">${escapeHtml(name)}: ${t.type==='cong'?`<span style="color:var(--teal);font-weight:600;">+${t.value}đ ${escapeHtml(t.category)}</span>`:`<span style="color:var(--red);font-weight:600;">${t.value}🥢 ${escapeHtml(t.category)}</span>`}</div>` : '';
     })
-  ).filter(Boolean).join('<br>') : '';
+  ).filter(Boolean).join('') : '';
 
   // --- Nhật ký ---
   const recent = log.filter(e=> students.some(s=>s.id===e.studentId))
@@ -1030,21 +1038,12 @@ async function renderKyLuat(subHtml){
 
   return `<main>${subHtml}
     <h2 class="section">📋 Tổ ${toNum} — ${formatDateVN(state.date)}</h2>
-    <div class="card">
-      <div class="disc-chip-label">Vi phạm</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">${viphamChips}</div>
-      <div class="disc-chip-label" style="margin-top:10px;">Điểm cộng</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
+    <div class="card" style="padding-bottom:10px;">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${stuChips}</div>
     </div>
-    ${ac ? `<div class="card" style="margin-top:0;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:2px;">
-        ${ac.type==='vipham'?`<span style="color:var(--red);">${escapeHtml(ac.category)} — ${ac.value}🥢</span>`:`<span style="color:var(--teal);">${escapeHtml(ac.category)} — +${ac.value}đ</span>`}
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Chọn học sinh:</div>
-      ${studentList}
-    </div>` : `<p class="empty" style="margin:6px 0 0;">Bấm vào 1 loại vi phạm hoặc thưởng bên trên để chọn học sinh</p>`}
+    ${catPanel}
     ${totalTicks > 0 ? `<div class="card" style="margin-top:0;">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">ĐÃ CHỌN HÔM NAY:</div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:4px;">ĐÃ CHỌN:</div>
       ${tickSummaryRows}
     </div>
     <button class="primary-btn" data-act="submit-ticks" style="background:var(--accent);margin-bottom:4px;">✓ Ghi nhận ${totalTicks} mục — ${formatDateVN(state.date)}</button>` : ''}
@@ -1150,6 +1149,7 @@ async function submitTicksHandler(){
   const newLog = [...log, ...entries];
   await sset('discipline:log:'+entryMonth, newLog);
   disciplineTicks = {};
+  selectedStudents.clear();
   showToast(`✓ Đã ghi nhận ${entries.length} mục cho ${formatDateVN(state.date)}`);
   renderAsync();
 }
@@ -1169,7 +1169,7 @@ function attachHandlers(){
     };
   });
   const dateInput = document.getElementById('dateInput');
-  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; disciplineTicks = {}; renderAsync(); };
+  if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; disciplineTicks = {}; selectedStudents.clear(); renderAsync(); };
   const todayBtn = app.querySelector('[data-act="today"]');
   if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
   // (no theme toggle)
@@ -1274,34 +1274,30 @@ function attachHandlers(){
     renderAsync();
   };
 
-  // --- Category chip click → set activeTickCat → re-render ---
-  app.querySelectorAll('[data-cat-type]').forEach(btn=>{
+  // --- Student chip toggle ---
+  app.querySelectorAll('.stu-chip').forEach(btn=>{
     btn.onclick = ()=>{
-      const type = btn.dataset.catType;
-      const cat = btn.dataset.catLabel;
-      const val = parseInt(btn.dataset.catVal);
-      if(activeTickCat && activeTickCat.type===type && activeTickCat.category===cat){
-        activeTickCat = null; // toggle off
-      } else {
-        activeTickCat = {type, category:cat, value:val};
-      }
+      const sid = btn.dataset.stuId;
+      if(selectedStudents.has(sid)) selectedStudents.delete(sid);
+      else selectedStudents.add(sid);
       renderAsync();
     };
   });
-  // --- Student checkbox → update disciplineTicks ---
-  app.querySelectorAll('.tick-stu-cb').forEach(cb=>{
-    cb.onchange = ()=>{
-      const sid = cb.dataset.sid;
-      const ac = activeTickCat;
-      if(!ac) return;
-      if(!disciplineTicks[sid]) disciplineTicks[sid] = [];
-      const idx = disciplineTicks[sid].findIndex(t=>t.type===ac.type && t.category===ac.category);
-      if(cb.checked && idx<0){
-        disciplineTicks[sid].push({type:ac.type, category:ac.category, value:ac.value});
-      } else if(!cb.checked && idx>=0){
-        disciplineTicks[sid].splice(idx,1);
-        if(disciplineTicks[sid].length===0) delete disciplineTicks[sid];
-      }
+  // --- Category chip → assign to selected students → clear selection ---
+  app.querySelectorAll('[data-cat-type]').forEach(btn=>{
+    btn.onclick = ()=>{
+      if(selectedStudents.size === 0) return;
+      const type = btn.dataset.catType;
+      const cat = btn.dataset.catLabel;
+      const val = parseInt(btn.dataset.catVal);
+      selectedStudents.forEach(sid=>{
+        if(!disciplineTicks[sid]) disciplineTicks[sid] = [];
+        // Không thêm trùng cùng loại + category
+        if(!disciplineTicks[sid].some(t=>t.type===type && t.category===cat)){
+          disciplineTicks[sid].push({type, category:cat, value:val});
+        }
+      });
+      selectedStudents.clear();
       renderAsync();
     };
   });
