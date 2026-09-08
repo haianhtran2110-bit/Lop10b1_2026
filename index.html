@@ -389,6 +389,26 @@ async function doLogin(role, passcode){
 async function loadRoster(){ let r = await sget('roster'); state.roster = Array.isArray(r) ? r : []; }
 async function saveRoster(){ await sset('roster', state.roster); }
 
+// ── Nhớ đăng nhập (localStorage, hết hạn sau 30 ngày) ──
+const SESSION_KEY = 'lop10b1_session';
+const SESSION_DAYS = 30;
+function saveSession(role){
+  try{
+    const expiry = Date.now() + SESSION_DAYS * 86400000;
+    localStorage.setItem(SESSION_KEY, JSON.stringify({role, expiry}));
+  }catch(e){}
+}
+function loadSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    if(!s || Date.now() > s.expiry){ localStorage.removeItem(SESSION_KEY); return null; }
+    return s;
+  }catch(e){ return null; }
+}
+function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+
 async function init(){
   if(!API_URL || API_URL.indexOf('DÁN_URL') === 0){
     document.getElementById('app').innerHTML = `
@@ -398,6 +418,17 @@ async function init(){
         <p style="color:#888;font-size:13px;line-height:1.6;">Tìm dòng <code style="background:#1E1E1E;padding:2px 6px;border-radius:4px;">API_URL</code> trong file và dán URL Apps Script Web App vào.</p>
       </div>`;
     return;
+  }
+  // Khôi phục session đã lưu
+  const savedSession = loadSession();
+  if(savedSession){
+    const roleObj = LOGIN_ROLES.find(r=>r.key===savedSession.role);
+    if(roleObj){
+      state.unlocked[roleObj.key] = true;
+      if(roleObj.tab === 'kyluat') state.sub.kyluat = roleObj.key;
+      state.tab = roleObj.tab;
+      state.showLogin = false;
+    }
   }
   await loadRoster();
   state.loading = false;
@@ -496,6 +527,7 @@ function renderLoginScreen(){
     submitBtn.disabled = false; submitBtn.textContent = 'Mở khoá →';
     if(ok){
       state.unlocked[sel.key] = true;
+      saveSession(sel.key); // nhớ đăng nhập 30 ngày
       // For kyluat tab, also set the right sub-tổ
       if(sel.tab === 'kyluat'){
         state.sub.kyluat = sel.key;
@@ -541,8 +573,10 @@ function tabbar(){
   const entries = state.isViewer
     ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
     : Object.entries(ROLE_META).filter(([k])=>k!=='public');
+  const hasSession = !!loadSession();
   const loginBtn = state.isViewer
     ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
+    : hasSession ? `<button data-act="logout" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🚪</span>Thoát</button>`
     : '';
   return `<div class="tabbar">${entries.map(([key,r])=>`
     <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
@@ -1211,6 +1245,16 @@ function attachHandlers(){
   app.querySelectorAll('[data-tab]').forEach(btn=>{ btn.onclick = ()=>{ state.tab = btn.dataset.tab; render(); }; });
   const goLoginBtn = app.querySelector('[data-act="go-login"]');
   if(goLoginBtn) goLoginBtn.onclick = ()=>{ state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; render(); };
+  const logoutBtn = app.querySelector('[data-act="logout"]');
+  if(logoutBtn) logoutBtn.onclick = ()=>{
+    if(!confirm('Đăng xuất? Lần sau cần nhập mật khẩu lại.')) return;
+    clearSession();
+    state.unlocked = {};
+    state.showLogin = true;
+    state.isViewer = false;
+    state.loginSelectedRole = null;
+    render();
+  };
   app.querySelectorAll('[data-subtab]').forEach(btn=>{
     btn.onclick = ()=>{
       const [group,key] = btn.dataset.subtab.split(':');
