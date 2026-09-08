@@ -303,16 +303,16 @@ const ASSIGNMENT_FIELDS = [
 ];
 
 let state = {
-  tab: 'public',
+  tab: 'home',
   date: todayStr(),
   month: monthStr(todayStr()),
   roster: null,
   loading: true,
   sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
   unlocked: {},
-  showLogin: false,
+  showLogin: true,
   loginSelectedRole: null,
-  isViewer: true,
+  isViewer: false,
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
 let discPending = []; // [{studentId, type, category, value}] — giỏ chờ lưu
