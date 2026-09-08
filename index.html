@@ -683,6 +683,8 @@ async function guarded(roleKey, renderFn){
 
 // ---------- PUBLIC VIEW ----------
 async function renderPublic(){
+  // Luôn fetch lại từ GAS — không dùng cache cho các tab công khai
+  ['attendance:'+state.date,'study:'+state.date,'discipline:log:'+state.month,'duty:'+state.date].forEach(k=>delete _cache[k]);
   const _batch1 = await sgetMany([
     'attendance:'+state.date,
     'study:'+state.date,
@@ -1182,6 +1184,8 @@ async function renderGVCN(){
     'assignments',
     ...months3.map(m=>'discipline:log:'+m),
   ];
+  // Luôn fetch lại từ GAS — không dùng cache stale cho GVCN
+  _batchKeys.filter(k=>k!=='assignments').forEach(k=>delete _cache[k]);
   const _batchG = await sgetMany(_batchKeys);
   const attRaw = _batchG['attendance:'+state.date];
   const studyRaw = _batchG['study:'+state.date];
