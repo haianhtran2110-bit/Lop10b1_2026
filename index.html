@@ -978,6 +978,7 @@ async function renderKyLuat(subHtml){
         <span style="flex:1;"><b>${escapeHtml(name)}</b> — <span style="color:var(--muted);">${escapeHtml(e.category)}${e.note?(' · '+escapeHtml(e.note)):''}</span></span>
         <div style="display:flex;gap:6px;align-items:center;">
           <span class="disc-pts ${isCong?'pos':'neg'}">${isCong? '+'+e.value+'đ' : e.value+' 🥢'}</span>
+          ${isGVCN ? `<button data-act="edit-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" data-disc-value="${e.value}" data-disc-type="${e.type}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;">✏️</button>` : ''}
           ${isGVCN ? `<button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>` : ''}
         </div>
       </div>
@@ -1216,6 +1217,26 @@ function attachHandlers(){
     disciplineForm.studentId=''; disciplineForm.category='';
     renderAsync();
   };
+
+  app.querySelectorAll('[data-act="edit-disc"]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.discId;
+      const month = btn.dataset.discMonth;
+      const oldVal = btn.dataset.discValue;
+      const type = btn.dataset.discType;
+      const unit = type === 'cong' ? 'điểm cộng' : 'gậy';
+      const newVal = prompt(`Sửa số ${unit} (hiện tại: ${oldVal}):`, oldVal);
+      if(newVal === null) return;
+      const parsed = parseInt(newVal);
+      if(isNaN(parsed) || parsed <= 0){ showToast('Số không hợp lệ'); return; }
+      const log = await getMonthLog(month);
+      const entry = log.find(e=>e.id===id);
+      if(entry){ entry.value = parsed; }
+      await sset('discipline:log:'+month, log);
+      showToast('✓ Đã sửa');
+      renderAsync();
+    };
+  });
 
   app.querySelectorAll('[data-act="del-disc"]').forEach(btn=>{
     btn.onclick = async ()=>{
