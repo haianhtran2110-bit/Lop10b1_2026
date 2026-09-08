@@ -190,6 +190,8 @@ textarea.note-input{resize:vertical;}
 .cong-chip{border-color:var(--teal);color:var(--teal);}
 .cong-chip.active{background:var(--teal);color:#fff;}
 .disc-chip-label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;}
+details[open] .details-arrow{display:inline-block;transform:rotate(90deg);}
+.details-arrow{display:inline-block;transition:transform .15s;}
 
 /* SELECT */
 select,.sel{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:12px;padding:9px 10px;background:var(--surf2);color:var(--text);width:100%;-webkit-appearance:none;}
@@ -1007,10 +1009,17 @@ async function renderKyLuat(subHtml){
         <span style="font-size:12px;"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?` · <span style="color:var(--bad);font-size:11px;">${tier.label}</span>`:''}</span>
       </div>
       ${todaySummary}
-      <div class="disc-chip-label" style="margin-top:10px;">Vi phạm</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">${viphamChips}</div>
-      <div class="disc-chip-label">Điểm cộng</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
+      <details ${ticks.length?'open':''} style="margin-top:6px;">
+        <summary style="font-size:12px;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px;user-select:none;">
+          <span class="details-arrow">▸</span> Ghi nhận hôm nay
+        </summary>
+        <div style="margin-top:8px;">
+          <div class="disc-chip-label">Vi phạm</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">${viphamChips}</div>
+          <div class="disc-chip-label">Điểm cộng</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
+        </div>
+      </details>
     </div>`;
   }).join('');
 
