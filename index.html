@@ -313,7 +313,8 @@ let state = {
   isViewer: false,
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
-let disciplineTicks = {}; // {studentId: [{type,category,value},...]} — reset mỗi ngày khi submit
+let disciplineTicks = {}; // {studentId: [{type,category,value},...]} — reset sau khi submit
+let activeTickCat = null; // {type, category, value} — category chip đang chọn
 let ldDayData = null, ltData = null, htData = null, ldConfig = null;
 
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -979,54 +980,35 @@ async function renderKyLuat(subHtml){
   const agg = aggregateLog(log);
   const isGVCN = state.unlocked['gvcn'];
 
-  // --- Danh sách tick theo ngày ---
-  const studentCards = students.map(s=>{
-    const a = agg[s.id] || {cong:0, gay:0};
-    const tier = gayTier(a.gay);
-    const ticks = disciplineTicks[s.id] || [];
-    const todaySummary = ticks.length
-      ? `<div style="font-size:12px;margin-top:4px;">`
-        + ticks.map(t=> t.type==='cong'
-          ? `<span style="color:var(--teal);font-weight:600;">+${t.value}đ ${escapeHtml(t.category)}</span>`
-          : `<span style="color:var(--red);font-weight:600;">${t.value}🥢 ${escapeHtml(t.category)}</span>`
-        ).join(' · ')
-        + `</div>`
-      : '';
-
-    const viphamChips = VIPHAM_CATEGORIES.map(c=>{
-      const active = ticks.some(t=>t.type==='vipham'&&t.category===c.label);
-      return `<button class="disc-chip vipham-chip${active?' active':''}" data-tick-sid="${s.id}" data-tick-type="vipham" data-tick-cat="${escapeAttr(c.label)}" data-tick-val="${c.gay}">${escapeHtml(c.label)} ${c.gay}🥢</button>`;
-    }).join('');
-
-    const congChips = CONG_CATEGORIES.map(c=>{
-      const active = ticks.some(t=>t.type==='cong'&&t.category===c.label);
-      return `<button class="disc-chip cong-chip${active?' active':''}" data-tick-sid="${s.id}" data-tick-type="cong" data-tick-cat="${escapeAttr(c.label)}" data-tick-val="${c.pts}">${escapeHtml(c.label)} +${c.pts}đ</button>`;
-    }).join('');
-
-    return `<div class="card" style="margin-bottom:8px;">
-      <div class="disc-summary">
-        <span class="week-name">${escapeHtml(s.name)}</span>
-        <span style="font-size:12px;"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?` · <span style="color:var(--bad);font-size:11px;">${tier.label}</span>`:''}</span>
-      </div>
-      ${todaySummary}
-      <details ${ticks.length?'open':''} style="margin-top:6px;">
-        <summary style="font-size:12px;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px;user-select:none;">
-          <span class="details-arrow">▸</span> Ghi nhận hôm nay
-        </summary>
-        <div style="margin-top:8px;">
-          <div class="disc-chip-label">Vi phạm</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">${viphamChips}</div>
-          <div class="disc-chip-label">Điểm cộng</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
-        </div>
-      </details>
-    </div>`;
+  // --- BƯỚC 1: Chips chọn loại vi phạm / thưởng ---
+  const ac = activeTickCat;
+  const viphamChips = VIPHAM_CATEGORIES.map(c=>{
+    const isSel = ac && ac.type==='vipham' && ac.category===c.label;
+    return `<button class="disc-chip vipham-chip${isSel?' active':''}" data-cat-type="vipham" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.gay}">${escapeHtml(c.label)} ${c.gay}🥢</button>`;
+  }).join('');
+  const congChips = CONG_CATEGORIES.map(c=>{
+    const isSel = ac && ac.type==='cong' && ac.category===c.label;
+    return `<button class="disc-chip cong-chip${isSel?' active':''}" data-cat-type="cong" data-cat-label="${escapeAttr(c.label)}" data-cat-val="${c.pts}">${escapeHtml(c.label)} +${c.pts}đ</button>`;
   }).join('');
 
+  // --- BƯỚC 2: Danh sách học sinh để tick (chỉ hiện khi đã chọn category) ---
+  const studentList = ac ? students.map(s=>{
+    const checked = (disciplineTicks[s.id]||[]).some(t=>t.type===ac.type && t.category===ac.category);
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer;">
+      <input type="checkbox" class="tick-stu-cb" data-sid="${s.id}" ${checked?'checked':''} style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;">
+      <span style="flex:1;font-size:14px;font-weight:500;">${escapeHtml(s.name)}</span>
+      <span style="font-size:12px;color:var(--muted);">${(disciplineTicks[s.id]||[]).map(t=>t.type==='cong'?`<span style="color:var(--teal);">+${t.value}đ</span>`:`<span style="color:var(--red);">${t.value}🥢</span>`).join(' ')}</span>
+    </label>`;
+  }).join('') : '';
+
+  // --- Tóm tắt đã tick ---
   const totalTicks = Object.values(disciplineTicks).reduce((s,arr)=>s+arr.length,0);
-  const submitBtn = totalTicks > 0
-    ? `<button class="primary-btn" data-act="submit-ticks" style="background:var(--accent);margin-bottom:4px;">✓ Ghi nhận ${totalTicks} mục — ${formatDateVN(state.date)}</button>`
-    : '';
+  const tickSummaryRows = totalTicks > 0 ? Object.entries(disciplineTicks).flatMap(([sid, ticks])=>
+    ticks.map(t=>{
+      const name = students.find(s=>s.id===sid)?.name || '';
+      return name ? `<span style="font-size:12px;">${escapeHtml(name)}: ${t.type==='cong'?`<span style="color:var(--teal);">+${t.value}đ ${escapeHtml(t.category)}</span>`:`<span style="color:var(--red);">${t.value}🥢 ${escapeHtml(t.category)}</span>`}</span>` : '';
+    })
+  ).filter(Boolean).join('<br>') : '';
 
   // --- Nhật ký ---
   const recent = log.filter(e=> students.some(s=>s.id===e.studentId))
@@ -1048,8 +1030,24 @@ async function renderKyLuat(subHtml){
 
   return `<main>${subHtml}
     <h2 class="section">📋 Tổ ${toNum} — ${formatDateVN(state.date)}</h2>
-    ${studentCards || emptyRoster()}
-    ${submitBtn}
+    <div class="card">
+      <div class="disc-chip-label">Vi phạm</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${viphamChips}</div>
+      <div class="disc-chip-label" style="margin-top:10px;">Điểm cộng</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${congChips}</div>
+    </div>
+    ${ac ? `<div class="card" style="margin-top:0;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:2px;">
+        ${ac.type==='vipham'?`<span style="color:var(--red);">${escapeHtml(ac.category)} — ${ac.value}🥢</span>`:`<span style="color:var(--teal);">${escapeHtml(ac.category)} — +${ac.value}đ</span>`}
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Chọn học sinh:</div>
+      ${studentList}
+    </div>` : `<p class="empty" style="margin:6px 0 0;">Bấm vào 1 loại vi phạm hoặc thưởng bên trên để chọn học sinh</p>`}
+    ${totalTicks > 0 ? `<div class="card" style="margin-top:0;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">ĐÃ CHỌN HÔM NAY:</div>
+      ${tickSummaryRows}
+    </div>
+    <button class="primary-btn" data-act="submit-ticks" style="background:var(--accent);margin-bottom:4px;">✓ Ghi nhận ${totalTicks} mục — ${formatDateVN(state.date)}</button>` : ''}
     <h2 class="section">Nhật ký tháng <input type="month" id="monthInput" value="${state.month}"></h2>
     <div class="card">${recent || '<p class="empty">Chưa có ghi nhận nào.</p>'}</div>
   </main>`;
@@ -1276,60 +1274,38 @@ function attachHandlers(){
     renderAsync();
   };
 
-  // --- Chip toggle (không cần re-render, chỉ update DOM + state) ---
-  app.querySelectorAll('.disc-chip').forEach(btn=>{
+  // --- Category chip click → set activeTickCat → re-render ---
+  app.querySelectorAll('[data-cat-type]').forEach(btn=>{
     btn.onclick = ()=>{
-      const sid = btn.dataset.tickSid;
-      const type = btn.dataset.tickType;
-      const cat = btn.dataset.tickCat;
-      const val = parseInt(btn.dataset.tickVal);
-      if(!disciplineTicks[sid]) disciplineTicks[sid] = [];
-      const idx = disciplineTicks[sid].findIndex(t=>t.type===type && t.category===cat);
-      if(idx >= 0){
-        disciplineTicks[sid].splice(idx,1);
-        btn.classList.remove('active');
+      const type = btn.dataset.catType;
+      const cat = btn.dataset.catLabel;
+      const val = parseInt(btn.dataset.catVal);
+      if(activeTickCat && activeTickCat.type===type && activeTickCat.category===cat){
+        activeTickCat = null; // toggle off
       } else {
-        disciplineTicks[sid].push({type, category:cat, value:val});
-        btn.classList.add('active');
+        activeTickCat = {type, category:cat, value:val};
       }
-      // Cập nhật dòng tóm tắt hôm nay của học sinh này
-      const card = btn.closest('.card');
-      const ticks = disciplineTicks[sid] || [];
-      let sumEl = card.querySelector('.today-summary');
-      if(!sumEl){
-        sumEl = document.createElement('div');
-        sumEl.className = 'today-summary';
-        sumEl.style.cssText = 'font-size:12px;margin-top:4px;';
-        card.querySelector('.disc-summary').after(sumEl);
-      }
-      sumEl.innerHTML = ticks.length
-        ? ticks.map(t=> t.type==='cong'
-            ? `<span style="color:var(--teal);font-weight:600;">+${t.value}đ ${escapeHtml(t.category)}</span>`
-            : `<span style="color:var(--red);font-weight:600;">${t.value}🥢 ${escapeHtml(t.category)}</span>`
-          ).join(' · ')
-        : '';
-      // Cập nhật nút submit
-      const total = Object.values(disciplineTicks).reduce((s,a)=>s+a.length,0);
-      let subBtn = app.querySelector('[data-act="submit-ticks"]');
-      if(total > 0){
-        if(!subBtn){
-          subBtn = document.createElement('button');
-          subBtn.className = 'primary-btn';
-          subBtn.dataset.act = 'submit-ticks';
-          subBtn.style.cssText = 'background:var(--accent);margin-bottom:4px;';
-          // Chèn trước section nhật ký
-          const nhatkyH2 = [...app.querySelectorAll('h2.section')].find(h=>h.textContent.includes('Nhật ký'));
-          if(nhatkyH2) nhatkyH2.before(subBtn);
-          else app.querySelector('main').appendChild(subBtn);
-          subBtn.onclick = submitTicksHandler;
-        }
-        subBtn.textContent = `✓ Ghi nhận ${total} mục — ${formatDateVN(state.date)}`;
-      } else if(subBtn){
-        subBtn.remove();
-      }
+      renderAsync();
     };
   });
-  // Gắn handler cho nút submit nếu đã render sẵn (trường hợp re-render khi đã có ticks)
+  // --- Student checkbox → update disciplineTicks ---
+  app.querySelectorAll('.tick-stu-cb').forEach(cb=>{
+    cb.onchange = ()=>{
+      const sid = cb.dataset.sid;
+      const ac = activeTickCat;
+      if(!ac) return;
+      if(!disciplineTicks[sid]) disciplineTicks[sid] = [];
+      const idx = disciplineTicks[sid].findIndex(t=>t.type===ac.type && t.category===ac.category);
+      if(cb.checked && idx<0){
+        disciplineTicks[sid].push({type:ac.type, category:ac.category, value:ac.value});
+      } else if(!cb.checked && idx>=0){
+        disciplineTicks[sid].splice(idx,1);
+        if(disciplineTicks[sid].length===0) delete disciplineTicks[sid];
+      }
+      renderAsync();
+    };
+  });
+  // --- Submit ticks ---
   const existingSubBtn = app.querySelector('[data-act="submit-ticks"]');
   if(existingSubBtn) existingSubBtn.onclick = submitTicksHandler;
 
