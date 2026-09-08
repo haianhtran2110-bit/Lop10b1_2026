@@ -246,6 +246,7 @@ label.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-trans
 <script>
 const ROLE_META = {
   public:{label:'Báo cáo', short:'Báo cáo', icon:'📊', color:'#A07850'},
+  home:{label:'Danh sách lớp', short:'Lớp', icon:'👥', color:'#A07850'},
   lt:{label:'Lớp trưởng', short:'LT', icon:'⭐', color:'#C07878'},
   hoctap:{label:'LP Học tập', short:'Học tập', icon:'📚', color:'#5B8EA6'},
   laodong:{label:'LP Lao động', short:'Lao động', icon:'🧹', color:'#6A9E7A'},
@@ -302,12 +303,12 @@ const ASSIGNMENT_FIELDS = [
 ];
 
 let state = {
-  tab: 'public',
+  tab: 'home',
   date: todayStr(),
   month: monthStr(todayStr()),
   roster: null,
   loading: true,
-  sub: {gvcn:'tonghop', hoctap:'today', laodong:'today', kyluat:'to-1'},
+  sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
   unlocked: {},
   showLogin: true,
   loginSelectedRole: null,
@@ -333,22 +334,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbw79Fcxf8BPieKv0_YvZwx5
 const API_TOKEN = 'Lop10b1@2026';
 // ====================================
 
-// ── Cache persistent (localStorage) ──
-const CACHE_LS_KEY = 'lop10b1_cache';
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 giờ
-let _cache = {};
-(function restoreCache(){
-  try{
-    const raw = localStorage.getItem(CACHE_LS_KEY);
-    if(!raw) return;
-    const {ts, data} = JSON.parse(raw);
-    if(Date.now() - ts < CACHE_TTL_MS) _cache = data || {};
-  }catch(e){}
-})();
-function persistCache(){
-  try{ localStorage.setItem(CACHE_LS_KEY, JSON.stringify({ts:Date.now(), data:_cache})); }catch(e){}
-}
-
+const _cache = {};
 async function sget(key){
   if(key in _cache) return _cache[key];
   try{
@@ -358,7 +344,6 @@ async function sget(key){
     if(data.error) throw new Error(data.error);
     const val = data.value ? JSON.parse(data.value) : null;
     _cache[key] = val;
-    persistCache();
     return val;
   } catch(e){ console.error('sget failed', key, e); return null; }
 }
@@ -374,7 +359,6 @@ async function sgetMany(keys){
         Object.entries(data.values).forEach(([k,v])=>{
           _cache[k] = v ? JSON.parse(v) : null;
         });
-        persistCache();
       }
     } catch(e){ console.error('sgetMany failed', e); }
   }
@@ -385,7 +369,6 @@ async function sgetMany(keys){
 }
 async function sset(key, value){
   _cache[key] = value; // cập nhật cache ngay, không chờ GAS
-  persistCache();
   try{
     const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
@@ -406,26 +389,6 @@ async function doLogin(role, passcode){
 async function loadRoster(){ let r = await sget('roster'); state.roster = Array.isArray(r) ? r : []; }
 async function saveRoster(){ await sset('roster', state.roster); }
 
-// ── Nhớ đăng nhập (localStorage, hết hạn sau 30 ngày) ──
-const SESSION_KEY = 'lop10b1_session';
-const SESSION_DAYS = 30;
-function saveSession(role){
-  try{
-    const expiry = Date.now() + SESSION_DAYS * 86400000;
-    localStorage.setItem(SESSION_KEY, JSON.stringify({role, expiry}));
-  }catch(e){}
-}
-function loadSession(){
-  try{
-    const raw = localStorage.getItem(SESSION_KEY);
-    if(!raw) return null;
-    const s = JSON.parse(raw);
-    if(!s || Date.now() > s.expiry){ localStorage.removeItem(SESSION_KEY); return null; }
-    return s;
-  }catch(e){ return null; }
-}
-function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
-
 async function init(){
   if(!API_URL || API_URL.indexOf('DÁN_URL') === 0){
     document.getElementById('app').innerHTML = `
@@ -436,45 +399,23 @@ async function init(){
       </div>`;
     return;
   }
-  // Khôi phục session đã lưu
-  const savedSession = loadSession();
-  if(savedSession){
-    const roleObj = LOGIN_ROLES.find(r=>r.key===savedSession.role);
-    if(roleObj){
-      state.unlocked[roleObj.key] = true;
-      if(roleObj.tab === 'kyluat') state.sub.kyluat = roleObj.key;
-      state.tab = roleObj.tab;
-      state.showLogin = false;
-    }
-  }
-  // Nếu roster đã có trong cache → render ngay, không chờ GAS
-  const cachedRoster = _cache['roster'];
-  if(Array.isArray(cachedRoster) && cachedRoster.length > 0){
-    state.roster = cachedRoster;
-    state.loading = false;
-    render();
-    // Cập nhật roster từ GAS ngầm (không block UI)
-    loadRoster().then(()=>{ if(JSON.stringify(state.roster)!==JSON.stringify(_cache['roster'])) renderAsync(); });
-  } else {
-    await loadRoster();
-    state.loading = false;
-    render();
-  }
-  // Prefetch data ngầm — 1 request thay vì nhiều
-  const today = state.date;
-  const month = state.month;
-  // Các key nhiều người cùng ghi → luôn fetch lại từ GAS, không dùng cache cũ
-  const alwaysFresh = [
-    'attendance:'+today,
-    'study:'+today,
-    'duty:'+today,
-    'discipline:log:'+month,
-  ];
-  // Các key ít thay đổi → chỉ fetch nếu chưa có trong cache
-  const lazyKeys = ['duty:config','assignments'];
-  const uncachedLazy = lazyKeys.filter(k=>!(k in _cache));
-  const toFetch = [...alwaysFresh, ...uncachedLazy];
-  setTimeout(()=>sgetMany(toFetch).then(()=>renderAsync()), 200);
+  await loadRoster();
+  state.loading = false;
+  render();
+  // Prefetch data cho ngày hôm nay vào cache ngay sau khi render
+  setTimeout(()=>{
+    const today = state.date;
+    const month = state.month;
+    // 1 request duy nhất thay vì 6 request riêng lẻ
+    sgetMany([
+      'attendance:'+today,
+      'study:'+today,
+      'duty:'+today,
+      'duty:config',
+      'discipline:log:'+month,
+      'assignments',
+    ]);
+  }, 100);
 }
 
 function toggleTheme(){
@@ -497,7 +438,7 @@ const LOGIN_ROLES = [
   {key:'to-1', tab:'kyluat', label:'Tổ trưởng 1', icon:'1️⃣', color:'#C19A3E'},
   {key:'to-2', tab:'kyluat', label:'Tổ trưởng 2', icon:'2️⃣', color:'#C19A3E'},
   {key:'to-3', tab:'kyluat', label:'Tổ trưởng 3', icon:'3️⃣', color:'#C19A3E'},
-  {key:'gvcn', tab:'gvcn', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
+  {key:'gvcn', tab:'home', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
 ];
 
 function renderLoginScreen(){
@@ -555,7 +496,6 @@ function renderLoginScreen(){
     submitBtn.disabled = false; submitBtn.textContent = 'Mở khoá →';
     if(ok){
       state.unlocked[sel.key] = true;
-      saveSession(sel.key); // nhớ đăng nhập 30 ngày
       // For kyluat tab, also set the right sub-tổ
       if(sel.tab === 'kyluat'){
         state.sub.kyluat = sel.key;
@@ -601,10 +541,8 @@ function tabbar(){
   const entries = state.isViewer
     ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
     : Object.entries(ROLE_META).filter(([k])=>k!=='public');
-  const hasSession = !!loadSession();
   const loginBtn = state.isViewer
     ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
-    : hasSession ? `<button data-act="logout" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🚪</span>Thoát</button>`
     : '';
   return `<div class="tabbar">${entries.map(([key,r])=>`
     <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
@@ -644,6 +582,9 @@ async function renderAsync(){
   if(state.tab === 'public'){
     coverHtml = cover('Báo cáo lớp 10B1', `Xem tự do · ${formatDateVN(state.date)}`, role.color, true);
     mainHtml = await renderPublic();
+  } else if(state.tab === 'home'){
+    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh · Chỉ GVCN chỉnh sửa được`, role.color, false);
+    mainHtml = await guarded('gvcn', renderHome);
   } else if(state.tab === 'lt'){
     coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.color, true);
     mainHtml = await guarded('lop-truong', renderLT);
@@ -662,16 +603,12 @@ async function renderAsync(){
       mainHtml = await renderKyLuat(subHtml);
     }
   } else if(state.tab === 'gvcn'){
-    const sub = state.sub.gvcn || 'tonghop';
-    const subLabel = {tonghop:'Tổng hợp tình hình lớp', danhsach:'Danh sách & chỉnh sửa', phancong:'Phân công ban cán sự'}[sub] || '';
-    coverHtml = cover('GVCN', subLabel, role.color, true);
-    mainHtml = await guarded('gvcn', ()=>renderGVCN(sub));
+    coverHtml = cover('GVCN', 'Tổng hợp tình hình lớp', role.color, true);
+    mainHtml = await guarded('gvcn', renderGVCN);
   }
 
-  const scrollY = window.scrollY;
   app.innerHTML = coverHtml + mainHtml + tabbar();
   attachHandlers();
-  if(scrollY > 0) window.scrollTo(0, scrollY);
 }
 
 async function guarded(roleKey, renderFn){
@@ -681,8 +618,6 @@ async function guarded(roleKey, renderFn){
 
 // ---------- PUBLIC VIEW ----------
 async function renderPublic(){
-  // Luôn fetch lại từ GAS — không dùng cache cho các tab công khai
-  ['attendance:'+state.date,'study:'+state.date,'discipline:log:'+state.month,'duty:'+state.date].forEach(k=>delete _cache[k]);
   const _batch1 = await sgetMany([
     'attendance:'+state.date,
     'study:'+state.date,
@@ -1173,65 +1108,20 @@ async function renderKyLuat(subHtml){
   </main>`;
 }
 
-async function renderGVCN(sub){
-  sub = sub || state.sub.gvcn || 'tonghop';
-  const subHtml = subtabs('gvcn', [['tonghop','Tổng hợp'],['danhsach','Danh sách'],['phancong','Phân công']]);
-
-  // --- Sub: Danh sách học sinh ---
-  if(sub === 'danhsach'){
-    const rows = state.roster.map((s,i)=>`
-      <div class="roster-edit-row" data-id="${s.id}">
-        <span class="idx">${i+1}</span>
-        <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
-        <select class="select-to" data-id="${s.id}">
-          <option value="" ${!s.to?'selected':''}>Tổ?</option>
-          <option value="1" ${s.to===1?'selected':''}>Tổ 1</option>
-          <option value="2" ${s.to===2?'selected':''}>Tổ 2</option>
-          <option value="3" ${s.to===3?'selected':''}>Tổ 3</option>
-        </select>
-        <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
-      </div>`).join('');
-    return `<main>${subHtml}
-      <h2 class="section">Học sinh (${state.roster.length})</h2>
-      <div class="card">
-        ${rows || '<p class="empty">Chưa có học sinh nào.</p>'}
-        <button class="add-btn" data-act="add-student">+ Thêm học sinh</button>
-      </div>
-      <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
-      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Chọn Tổ để tổ trưởng chỉ thấy tổ mình.</p>
-    </main>`;
-  }
-
-  // --- Sub: Phân công ---
-  if(sub === 'phancong'){
-    const assign = await sget('assignments') || {};
-    const rows = ASSIGNMENT_FIELDS.map(f=>`
-      <div class="card" style="margin-bottom:8px;">
-        <div class="week-name">${f.title}</div>
-        <div class="week-sub" style="margin-bottom:8px;">${f.desc}</div>
-        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách..." style="margin-top:0;">
-      </div>`).join('');
-    return `<main>${subHtml}
-      <h2 class="section">Phân công ban cán sự</h2>
-      ${rows}
-      <button class="primary-btn" data-act="save-assignments">Lưu phân công</button>
-    </main>`;
-  }
-
-  // --- Sub: Tổng hợp (default) ---
+async function renderGVCN(){
   const months3 = prevMonths(state.month, 3);
   const _batchKeys = [
     'attendance:'+state.date,
     'study:'+state.date,
     'duty:'+state.date,
+    'assignments',
     ...months3.map(m=>'discipline:log:'+m),
   ];
-  // Luôn fetch lại từ GAS — không dùng cache stale cho GVCN
-  _batchKeys.forEach(k=>delete _cache[k]);
   const _batchG = await sgetMany(_batchKeys);
   const attRaw = _batchG['attendance:'+state.date];
   const studyRaw = _batchG['study:'+state.date];
   const dutyRaw = _batchG['duty:'+state.date];
+  const assign = _batchG['assignments'];
   const logsByMonth = months3.map(m=> { const v = _batchG['discipline:log:'+m]; return Array.isArray(v)?v:[]; });
   const att = attRaw || {status:{}, phoneCount:0, openedBox:false, closedBox:false};
   const lateList=[], absentList=[];
@@ -1251,6 +1141,7 @@ async function renderGVCN(sub){
       const tier = gayTier(a.gay);
       const badges = quyenLoiTier(a.cong);
       const chronic = months3.every((m,i)=> (aggByMonth[i][s.id]?.gay||0) >=3 );
+      const isGVCN = state.unlocked['gvcn'];
       const entries = rawLog.filter(e=>e.studentId===s.id).slice().sort((a,b)=>b.date>a.date?1:-1);
       const entriesHtml = entries.length ? entries.map(e=>{
         const isCong = e.type==='cong';
@@ -1258,8 +1149,8 @@ async function renderGVCN(sub){
           <span style="font-size:12px;color:var(--muted);flex:1;">${escapeHtml(e.category)}${e.note?' · '+escapeHtml(e.note):''} <span style="color:var(--info);font-size:11px;">(${e.date.slice(8)}/${e.date.slice(5,7)})</span></span>
           <div style="display:flex;gap:4px;align-items:center;">
             <span style="font-size:12px;font-weight:700;color:${isCong?'var(--teal)':'var(--red)'};">${isCong?'+'+e.value+'đ':e.value+'🥢'}</span>
-            <button data-act="edit-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" data-disc-value="${e.value}" data-disc-type="${e.type}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;">✏️</button>
-            <button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>
+            ${isGVCN ? `<button data-act="edit-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" data-disc-value="${e.value}" data-disc-type="${e.type}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;">✏️</button>` : ''}
+            ${isGVCN ? `<button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>` : ''}
           </div>
         </div>`;
       }).join('') : '';
@@ -1274,7 +1165,10 @@ async function renderGVCN(sub){
     return `<h2 class="section">Tổ ${toNum}</h2><div class="card">${rows || emptyRoster()}</div>`;
   }).join('');
 
-  return `<main>${subHtml}
+  const assignSafe = assign || {};
+  const assignRows = ASSIGNMENT_FIELDS.map(f=>`<div class="row"><span class="name">${f.title}</span><span class="week-sub">${escapeHtml(assignSafe[f.key]||'(chưa có)')}</span></div>`).join('');
+
+  return `<main>
     <h2 class="section">Điểm danh ${formatDateVN(state.date)}</h2>
     <div class="card">
       <div class="week-sub">🚫 Vắng: ${absentList.join(', ')||'không có'}</div>
@@ -1293,6 +1187,8 @@ async function renderGVCN(sub){
     </div>
     <h2 class="section">Nền nếp tháng <input type="month" id="monthInput" value="${state.month}"></h2>
     ${disciplineRows}
+    <h2 class="section">Phân công nhiệm vụ</h2>
+    <div class="card">${assignRows}</div>
   </main>`;
 }
 
@@ -1315,16 +1211,6 @@ function attachHandlers(){
   app.querySelectorAll('[data-tab]').forEach(btn=>{ btn.onclick = ()=>{ state.tab = btn.dataset.tab; render(); }; });
   const goLoginBtn = app.querySelector('[data-act="go-login"]');
   if(goLoginBtn) goLoginBtn.onclick = ()=>{ state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; render(); };
-  const logoutBtn = app.querySelector('[data-act="logout"]');
-  if(logoutBtn) logoutBtn.onclick = ()=>{
-    if(!confirm('Đăng xuất? Lần sau cần nhập mật khẩu lại.')) return;
-    clearSession();
-    state.unlocked = {};
-    state.showLogin = true;
-    state.isViewer = false;
-    state.loginSelectedRole = null;
-    render();
-  };
   app.querySelectorAll('[data-subtab]').forEach(btn=>{
     btn.onclick = ()=>{
       const [group,key] = btn.dataset.subtab.split(':');
