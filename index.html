@@ -1027,6 +1027,7 @@ async function renderGVCN(){
   const dutyNames = duty ? duty.assigned.map(id=>state.roster.find(s=>s.id===id)?.name||'?') : [];
   const aggByMonth = logsByMonth.map(aggregateLog);
   const agg = aggByMonth[0];
+  const rawLog = logsByMonth[0] || [];
 
   const disciplineRows = [1,2,3].map(toNum=>{
     const students = state.roster.filter(s=>s.to===toNum);
@@ -1035,8 +1036,27 @@ async function renderGVCN(){
       const tier = gayTier(a.gay);
       const badges = quyenLoiTier(a.cong);
       const chronic = months3.every((m,i)=> (aggByMonth[i][s.id]?.gay||0) >=3 );
-      return `<div class="row"><span class="name">${escapeHtml(s.name)}</span><span style="font-size:12px;color:var(--muted);"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?' · '+tier.label:''}${chronic?' · <b style="color:var(--red);">Cân nhắc hạnh kiểm kỳ</b>':''}${badges.length?' · 🎁 '+badges.join(', '):''}</span></div>`;
-    }).join('');
+      const isGVCN = state.unlocked['gvcn'];
+      const entries = rawLog.filter(e=>e.studentId===s.id).slice().sort((a,b)=>b.date>a.date?1:-1);
+      const entriesHtml = entries.length ? entries.map(e=>{
+        const isCong = e.type==='cong';
+        return `<div style="display:flex;justify-content:space-between;gap:6px;align-items:center;padding:3px 0;border-top:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);flex:1;">${escapeHtml(e.category)}${e.note?' · '+escapeHtml(e.note):''} <span style="color:var(--info);font-size:11px;">(${e.date.slice(8)}/${e.date.slice(5,7)})</span></span>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <span style="font-size:12px;font-weight:700;color:${isCong?'var(--teal)':'var(--red)'};">${isCong?'+'+e.value+'đ':e.value+'🥢'}</span>
+            ${isGVCN ? `<button data-act="edit-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" data-disc-value="${e.value}" data-disc-type="${e.type}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;">✏️</button>` : ''}
+            ${isGVCN ? `<button data-act="del-disc" data-disc-id="${e.id}" data-disc-month="${monthOf(e.date)}" style="background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:0 2px;line-height:1;">×</button>` : ''}
+          </div>
+        </div>`;
+      }).join('') : '';
+      return `<div style="padding:6px 0 2px;">
+        <div class="row" style="padding-bottom:${entries.length?'4px':'0'};">
+          <span class="name">${escapeHtml(s.name)}</span>
+          <span style="font-size:12px;color:var(--muted);"><span style="color:var(--teal);">+${a.cong}đ</span> · <span style="color:var(--red);">${a.gay}🥢</span>${tier?' · '+tier.label:''}${chronic?' · <b style="color:var(--red);">Cân nhắc HK</b>':''}${badges.length?' · 🎁 '+badges.join(', '):''}</span>
+        </div>
+        ${entriesHtml}
+      </div>`;
+    }).join('<hr style="border:none;border-top:1px solid var(--border);margin:2px 0;">');
     return `<h2 class="section">Tổ ${toNum}</h2><div class="card">${rows || emptyRoster()}</div>`;
   }).join('');
 
