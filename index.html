@@ -303,16 +303,16 @@ const ASSIGNMENT_FIELDS = [
 ];
 
 let state = {
-  tab: 'home',
+  tab: 'public',
   date: todayStr(),
   month: monthStr(todayStr()),
   roster: null,
   loading: true,
   sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
   unlocked: {},
-  showLogin: true,
+  showLogin: false,
   loginSelectedRole: null,
-  isViewer: false,
+  isViewer: true,
 };
 let disciplineForm = {type:'cong', studentId:'', category:''};
 let discPending = []; // [{studentId, type, category, value}] — giỏ chờ lưu
@@ -334,7 +334,22 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbw79Fcxf8BPieKv0_YvZwx5
 const API_TOKEN = 'Lop10b1@2026';
 // ====================================
 
-const _cache = {};
+// ── Cache persistent (localStorage) ──
+const CACHE_LS_KEY = 'lop10b1_cache';
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 giờ
+let _cache = {};
+(function restoreCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_LS_KEY);
+    if(!raw) return;
+    const {ts, data} = JSON.parse(raw);
+    if(Date.now() - ts < CACHE_TTL_MS) _cache = data || {};
+  }catch(e){}
+})();
+function persistCache(){
+  try{ localStorage.setItem(CACHE_LS_KEY, JSON.stringify({ts:Date.now(), data:_cache})); }catch(e){}
+}
+
 async function sget(key){
   if(key in _cache) return _cache[key];
   try{
@@ -344,6 +359,7 @@ async function sget(key){
     if(data.error) throw new Error(data.error);
     const val = data.value ? JSON.parse(data.value) : null;
     _cache[key] = val;
+    persistCache();
     return val;
   } catch(e){ console.error('sget failed', key, e); return null; }
 }
@@ -359,6 +375,7 @@ async function sgetMany(keys){
         Object.entries(data.values).forEach(([k,v])=>{
           _cache[k] = v ? JSON.parse(v) : null;
         });
+        persistCache();
       }
     } catch(e){ console.error('sgetMany failed', e); }
   }
@@ -369,6 +386,7 @@ async function sgetMany(keys){
 }
 async function sset(key, value){
   _cache[key] = value; // cập nhật cache ngay, không chờ GAS
+  persistCache();
   try{
     const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
@@ -430,23 +448,34 @@ async function init(){
       state.showLogin = false;
     }
   }
-  await loadRoster();
-  state.loading = false;
-  render();
-  // Prefetch data cho ngày hôm nay vào cache ngay sau khi render
-  setTimeout(()=>{
-    const today = state.date;
-    const month = state.month;
-    // 1 request duy nhất thay vì 6 request riêng lẻ
-    sgetMany([
-      'attendance:'+today,
-      'study:'+today,
-      'duty:'+today,
-      'duty:config',
-      'discipline:log:'+month,
-      'assignments',
-    ]);
-  }, 100);
+  // Nếu roster đã có trong cache → render ngay, không chờ GAS
+  const cachedRoster = _cache['roster'];
+  if(Array.isArray(cachedRoster) && cachedRoster.length > 0){
+    state.roster = cachedRoster;
+    state.loading = false;
+    render();
+    // Cập nhật roster từ GAS ngầm (không block UI)
+    loadRoster().then(()=>{ if(JSON.stringify(state.roster)!==JSON.stringify(_cache['roster'])) renderAsync(); });
+  } else {
+    await loadRoster();
+    state.loading = false;
+    render();
+  }
+  // Prefetch data ngầm — 1 request thay vì nhiều
+  const today = state.date;
+  const month = state.month;
+  // Các key nhiều người cùng ghi → luôn fetch lại từ GAS, không dùng cache cũ
+  const alwaysFresh = [
+    'attendance:'+today,
+    'study:'+today,
+    'duty:'+today,
+    'discipline:log:'+month,
+  ];
+  // Các key ít thay đổi → chỉ fetch nếu chưa có trong cache
+  const lazyKeys = ['duty:config','assignments'];
+  const uncachedLazy = lazyKeys.filter(k=>!(k in _cache));
+  const toFetch = [...alwaysFresh, ...uncachedLazy];
+  setTimeout(()=>sgetMany(toFetch).then(()=>renderAsync()), 200);
 }
 
 function toggleTheme(){
@@ -641,8 +670,10 @@ async function renderAsync(){
     mainHtml = await guarded('gvcn', renderGVCN);
   }
 
+  const scrollY = window.scrollY;
   app.innerHTML = coverHtml + mainHtml + tabbar();
   attachHandlers();
+  if(scrollY > 0) window.scrollTo(0, scrollY);
 }
 
 async function guarded(roleKey, renderFn){
