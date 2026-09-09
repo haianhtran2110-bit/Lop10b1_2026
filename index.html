@@ -652,7 +652,9 @@ const LOGIN_ROLES = [
 ];
 // ===== ĐIỂM HỌC TẬP — Google Sheet lookup =====
 const SCORE_SHEET_ID = '1jtZf84_cylfWnvuEHH6XgMAP_iZt1bZiL9xXGBRGzbA';
-// Sheet "DanhSach": A=STT, B=Tên, C=Ngày sinh(date), D=Mã tra cứu(6 số), E+=Nhận xét tháng X
+// Sheet "DanhSach": A=STT, B=Tên, C=Ngày sinh(date), D=Mã tra cứu(6 số)
+// Sheet môn có điểm: A=STT, B=Tên, C=TX1(number), D=TX2... J=CK
+// Sheet môn có nhận xét: A=STT, B=Tên, C=Ngày sinh(date), D=Mã, E+=Nhận xét tháng X
 const SCORE_SUBJECTS = [
   {name:'Toán', icon:'📐'},
   {name:'Văn', icon:'📖'},
@@ -668,15 +670,7 @@ const SCORE_SUBJECTS = [
   {name:'Thể dục', icon:'🏃'},
 ];
 
-// Parse gviz date string "Date(2011,0,7)" → "07/01/2011"
-function gvizDateStr(v){
-  if(!v) return '';
-  const m = String(v).match(/Date\((\d+),(\d+),(\d+)\)/);
-  if(m) return `${String(m[3]).padStart(2,'0')}/${String(Number(m[2])+1).padStart(2,'0')}/${m[1]}`;
-  return String(v);
-}
-
-// Fetch 1 sheet: trả về {headers:[], rows:[[]]}
+// Fetch 1 sheet: trả về {cols:[{label,type}], rows:[[]]}
 async function fetchSheet(sheetName){
   const url = `https://docs.google.com/spreadsheets/d/${SCORE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
   try {
@@ -684,47 +678,58 @@ async function fetchSheet(sheetName){
     const text = await res.text();
     const json = JSON.parse(text.replace(/^[^{]+/, '').replace(/\);?\s*$/, ''));
     if(!json.table) return null;
-    const headers = json.table.cols.map(c => c.label || '');
-    const rows = json.table.rows.map(r => r.c.map(c => {
+    const cols = json.table.cols.map(c => ({ label: c.label||'', type: c.type||'string' }));
+    const rows = (json.table.rows||[]).map(r => r.c.map((c,ci) => {
       if(!c || c.v === null || c.v === undefined) return '';
-      // date type → format nicely
-      if(typeof c.v === 'string' && c.v.startsWith('Date(')) return gvizDateStr(c.v);
-      return String(c.f || c.v); // prefer formatted value
+      if(cols[ci] && cols[ci].type === 'date'){
+        // date: prefer formatted string
+        if(c.f) return c.f;
+        const m = String(c.v).match(/Date\((\d+),(\d+),(\d+)\)/);
+        if(m) return `${String(m[3]).padStart(2,'0')}/${String(Number(m[2])+1).padStart(2,'0')}/${m[1]}`;
+      }
+      return String(c.f || c.v);
     }));
-    return { headers, rows };
+    return { cols, rows };
   } catch(e){ return null; }
 }
 
-// Tra cứu học sinh theo Mã tra cứu (col D)
+// Tra cứu học sinh theo Mã tra cứu (col D = index 3 trong DanhSach)
 async function lookupStudentByCode(code){
   const data = await fetchSheet('DanhSach');
   if(!data) return null;
-  const nc = code.replace(/\s/g,'').toUpperCase();
-  const row = data.rows.find(r => String(r[3]).trim().toUpperCase() === nc);
+  const nc = code.replace(/\s/g,'');
+  const row = data.rows.find(r => String(r[3]).replace(/\s/g,'') === nc);
   if(!row) return null;
-  // Nhận xét: col E trở đi (index 4+)
-  const nhanXet = [];
-  for(let i=4; i<data.headers.length; i++){
-    if(data.headers[i] && row[i] && row[i].trim())
-      nhanXet.push({ label: data.headers[i], nd: row[i] });
-  }
-  return { stt: row[0], name: row[1], dob: row[2], ma: row[3], nhanXet };
+  return { stt: row[0], name: row[1], dob: row[2], ma: row[3] };
 }
 
-// Fetch điểm tất cả môn theo STT (col A)
-async function fetchStudentScores(stt){
+// Fetch điểm + nhận xét tất cả môn
+// Sheet điểm: col[2].type === 'number' → là điểm số, lookup by STT
+// Sheet nhận xét: col[2].type === 'date' → là DanhSach-style, lookup by Mã (col[3])
+async function fetchAllStudentData(stt, ma){
   const results = await Promise.all(SCORE_SUBJECTS.map(s => fetchSheet(s.name)));
-  return SCORE_SUBJECTS.map((subj, i) => {
+  const scores = [], nhanXet = [];
+  SCORE_SUBJECTS.forEach((subj, i) => {
     const data = results[i];
-    if(!data) return null;
-    const row = data.rows.find(r => String(r[0]).trim() === String(stt).trim());
-    if(!row) return null;
-    return {
-      subject: subj.name, icon: subj.icon,
-      tx: [row[2],row[3],row[4],row[5],row[6],row[7]].filter(v=>v!==''&&v!==null&&v!==undefined),
-      gk: row[8]||null, ck: row[9]||null,
-    };
-  }).filter(Boolean);
+    if(!data || !data.cols.length) return;
+    const isScoreSheet = data.cols[2] && data.cols[2].type === 'number';
+    if(isScoreSheet){
+      // Sheet điểm: tìm theo STT
+      const row = data.rows.find(r => String(r[0]).trim() === String(stt).trim());
+      if(!row) return;
+      const txVals = [row[2],row[3],row[4],row[5],row[6],row[7]].filter(v=>v!==''&&v!==null&&v!==undefined);
+      scores.push({ subject:subj.name, icon:subj.icon, tx:txVals, gk:row[8]||null, ck:row[9]||null });
+    } else {
+      // Sheet nhận xét: tìm theo Mã (col[3])
+      const row = data.rows.find(r => String(r[3]).replace(/\s/g,'') === String(ma).replace(/\s/g,''));
+      if(!row) return;
+      for(let j=4; j<data.cols.length; j++){
+        if(data.cols[j] && data.cols[j].label && row[j] && row[j].trim())
+          nhanXet.push({ subject:subj.name, icon:subj.icon, label:data.cols[j].label, nd:row[j] });
+      }
+    }
+  });
+  return { scores, nhanXet };
 }
 
 // loginStep: 'pick-type' | 'pick-role' | 'enter-pass' | 'enter-student-code' | 'show-scores'
@@ -800,11 +805,25 @@ function renderLoginScreen(){
           <td>${s.ck?fmt(s.ck):''}</td>
         </tr>`;
       }).join('');
-      const nxHtml = d.nhanXet&&d.nhanXet.length ? d.nhanXet.map(nx=>`
-        <div style="margin-top:8px;background:#F6F9FF;border-radius:12px;padding:12px 14px;border-left:3px solid #1048C8;">
-          <div style="font-size:11px;font-weight:700;color:#1048C8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">${nx.label}</div>
-          <div style="font-size:13px;color:#0D1A40;line-height:1.6;">${nx.nd}</div>
-        </div>`).join('') : '';
+      // Nhận xét: nhóm theo tháng
+      let nxHtml = '';
+      if(d.nhanXet && d.nhanXet.length){
+        // Group by label (tháng)
+        const byThang = {};
+        d.nhanXet.forEach(nx=>{
+          if(!byThang[nx.label]) byThang[nx.label]=[];
+          byThang[nx.label].push(nx);
+        });
+        nxHtml = Object.entries(byThang).map(([thang, items])=>`
+          <div style="margin-top:10px;">
+            <div style="font-size:11px;font-weight:700;color:#1048C8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding:0 2px;">${thang}</div>
+            ${items.map(nx=>`
+              <div style="background:#F6F9FF;border-radius:10px;padding:10px 13px;margin-bottom:6px;border-left:3px solid #1048C8;">
+                <span style="font-size:11px;font-weight:700;color:#3A4A80;">${nx.icon} ${nx.subject}</span>
+                <div style="font-size:13px;color:#0D1A40;line-height:1.6;margin-top:2px;">${nx.nd}</div>
+              </div>`).join('')}
+          </div>`).join('');
+      }
       body = `
         <button id="btnBack" style="align-self:flex-start;background:#EEF3FF;border:1px solid rgba(16,72,200,0.15);border-radius:10px;padding:6px 14px;font-family:inherit;font-size:12px;font-weight:600;color:#3A4A80;cursor:pointer;margin-bottom:8px;">← Tra cứu lại</button>
         <div style="background:linear-gradient(135deg,#dce8ff,#EEF3FF);border-radius:13px;padding:13px 15px;width:100%;margin-bottom:10px;box-sizing:border-box;">
@@ -837,7 +856,7 @@ function renderLoginScreen(){
     'pick-role':'Chọn vai trò của bạn',
     'enter-pass':'Nhập mật khẩu để tiếp tục',
     'enter-student-code':'Tra cứu điểm học tập',
-    'show-scores':'Bảng điểm học kỳ',
+    'show-scores':'',
   }[loginStep] || '';
 
   app.innerHTML = `
@@ -892,9 +911,9 @@ function renderLoginScreen(){
       codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
       errEl.textContent='Không tìm thấy. Kiểm tra lại mã hoặc liên hệ GVCN.'; return;
     }
-    const scores = await fetchStudentScores(student.stt);
+    const allData = await fetchAllStudentData(student.stt, student.ma);
     codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
-    scoreData = { stt:student.stt, name:student.name, dob:student.dob, nhanXet:student.nhanXet||[], scores:scores||[] };
+    scoreData = { stt:student.stt, name:student.name, dob:student.dob, scores:allData.scores||[], nhanXet:allData.nhanXet||[] };
     loginStep = 'show-scores';
     renderLoginScreen();
   };
