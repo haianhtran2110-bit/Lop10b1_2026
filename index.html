@@ -315,6 +315,10 @@ label.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-trans
 .login-pass-box input::placeholder{color:#A0AABF;letter-spacing:.02em;font-weight:400;font-size:13px;}
 .login-pass-box .lp-err{color:var(--bad);font-size:12px;margin-bottom:8px;min-height:18px;}
 .login-pass-box .lp-submit{width:100%;padding:13px;border-radius:12px;border:none;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;background:#1048C8;color:#fff;}
+/* Score table */
+.score-table td,.score-table th{padding:8px 7px;text-align:center;border-bottom:1px solid #EEF3FF;white-space:nowrap;}
+.score-table tbody tr:nth-child(even){background:#F8FAFF;}
+.score-table tbody tr:hover{background:#EEF3FF;}
 
 </style>
 </head>
@@ -646,8 +650,87 @@ const LOGIN_ROLES = [
   {key:'to-3', tab:'kyluat', label:'Tổ trưởng Tổ 3', icon:'3️⃣', color:'#7A5200'},
   {key:'gvcn', tab:'gvcn', label:'GVCN', icon:'👩‍🏫', color:'#1B2A6B'},
 ];
-// loginStep: 'pick-type' | 'pick-role' | 'enter-pass'
+// ===== ĐIỂM HỌC TẬP — Google Sheet lookup =====
+const SCORE_SHEET_ID = '1jtZf84_cylfWnvuEHH6XgMAP_iZt1bZiL9xXGBRGzbA';
+// Sheet "DanhSach": A=STT, B=Tên, C=Ngày sinh(date), D=Mã tra cứu(6 số), E+=Nhận xét tháng X
+const SCORE_SUBJECTS = [
+  {name:'Toán', icon:'📐'},
+  {name:'Văn', icon:'📖'},
+  {name:'Anh Cơ Bản', icon:'🌐'},
+  {name:'Vật lý', icon:'⚡'},
+  {name:'Địa', icon:'🌏'},
+  {name:'Hóa', icon:'🧪'},
+  {name:'Sinh', icon:'🌿'},
+  {name:'Lịch sử', icon:'📜'},
+  {name:'GDCD', icon:'🏛️'},
+  {name:'Tin học', icon:'💻'},
+  {name:'Công nghệ', icon:'🔧'},
+  {name:'Thể dục', icon:'🏃'},
+];
+
+// Parse gviz date string "Date(2011,0,7)" → "07/01/2011"
+function gvizDateStr(v){
+  if(!v) return '';
+  const m = String(v).match(/Date\((\d+),(\d+),(\d+)\)/);
+  if(m) return `${String(m[3]).padStart(2,'0')}/${String(Number(m[2])+1).padStart(2,'0')}/${m[1]}`;
+  return String(v);
+}
+
+// Fetch 1 sheet: trả về {headers:[], rows:[[]]}
+async function fetchSheet(sheetName){
+  const url = `https://docs.google.com/spreadsheets/d/${SCORE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.replace(/^[^{]+/, '').replace(/\);?\s*$/, ''));
+    if(!json.table) return null;
+    const headers = json.table.cols.map(c => c.label || '');
+    const rows = json.table.rows.map(r => r.c.map(c => {
+      if(!c || c.v === null || c.v === undefined) return '';
+      // date type → format nicely
+      if(typeof c.v === 'string' && c.v.startsWith('Date(')) return gvizDateStr(c.v);
+      return String(c.f || c.v); // prefer formatted value
+    }));
+    return { headers, rows };
+  } catch(e){ return null; }
+}
+
+// Tra cứu học sinh theo Mã tra cứu (col D)
+async function lookupStudentByCode(code){
+  const data = await fetchSheet('DanhSach');
+  if(!data) return null;
+  const nc = code.replace(/\s/g,'').toUpperCase();
+  const row = data.rows.find(r => String(r[3]).trim().toUpperCase() === nc);
+  if(!row) return null;
+  // Nhận xét: col E trở đi (index 4+)
+  const nhanXet = [];
+  for(let i=4; i<data.headers.length; i++){
+    if(data.headers[i] && row[i] && row[i].trim())
+      nhanXet.push({ label: data.headers[i], nd: row[i] });
+  }
+  return { stt: row[0], name: row[1], dob: row[2], ma: row[3], nhanXet };
+}
+
+// Fetch điểm tất cả môn theo STT (col A)
+async function fetchStudentScores(stt){
+  const results = await Promise.all(SCORE_SUBJECTS.map(s => fetchSheet(s.name)));
+  return SCORE_SUBJECTS.map((subj, i) => {
+    const data = results[i];
+    if(!data) return null;
+    const row = data.rows.find(r => String(r[0]).trim() === String(stt).trim());
+    if(!row) return null;
+    return {
+      subject: subj.name, icon: subj.icon,
+      tx: [row[2],row[3],row[4],row[5],row[6],row[7]].filter(v=>v!==''&&v!==null&&v!==undefined),
+      gk: row[8]||null, ck: row[9]||null,
+    };
+  }).filter(Boolean);
+}
+
+// loginStep: 'pick-type' | 'pick-role' | 'enter-pass' | 'enter-student-code' | 'show-scores'
 let loginStep = 'pick-type';
+let scoreData = null; // {stt, name, dob, lop, scores:[]}
+let scoreLoading = false;
 
 function renderLoginScreen(){
   const app = document.getElementById('app');
@@ -658,12 +741,16 @@ function renderLoginScreen(){
     body = `
       <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
         <button id="btnIsBCS" style="padding:16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.15);background:#EEF3FF;font-family:inherit;font-size:14px;font-weight:700;color:#0D1A40;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:22px;width:40px;height:40px;text-align:center;background:rgba(16,72,200,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🏫</span>
+          <span style="font-size:22px;width:40px;height:40px;background:rgba(16,72,200,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🏫</span>
           <span>Tôi là ban cán sự lớp<br><span style="font-size:11px;font-weight:400;color:#7A8AB8;">Cần nhập mật khẩu được cấp</span></span>
         </button>
         <button id="btnIsViewer" style="padding:16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.10);background:#F6F8FF;font-family:inherit;font-size:14px;font-weight:600;color:#3A4A80;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:22px;width:40px;height:40px;text-align:center;background:rgba(16,72,200,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👀</span>
-          <span>Tôi chỉ muốn xem<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Xem báo cáo, không cần đăng nhập</span></span>
+          <span style="font-size:22px;width:40px;height:40px;background:rgba(16,72,200,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👁️</span>
+          <span>Xem điểm danh &amp; nền nếp<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Báo cáo lớp, không cần đăng nhập</span></span>
+        </button>
+        <button id="btnIsParent" style="padding:16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.10);background:#F6F8FF;font-family:inherit;font-size:14px;font-weight:600;color:#3A4A80;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:22px;width:40px;height:40px;background:rgba(16,72,200,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📊</span>
+          <span>Xem điểm học tập<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Phụ huynh tra cứu điểm theo mã số</span></span>
         </button>
       </div>`;
   } else if(loginStep === 'pick-role'){
@@ -686,7 +773,72 @@ function renderLoginScreen(){
         <p class="lp-err" id="splashErr"></p>
         <button class="lp-submit" id="splashSubmit" style="background:${sel.color};color:#fff;">Mở khoá →</button>
       </div>`;
+  } else if(loginStep === 'enter-student-code'){
+    body = `
+      <button id="btnBack" style="align-self:flex-start;background:#EEF3FF;border:1px solid rgba(16,72,200,0.15);border-radius:10px;padding:6px 14px;font-family:inherit;font-size:12px;font-weight:600;color:#3A4A80;cursor:pointer;margin-bottom:4px;">← Quay lại</button>
+      <div class="login-pass-box" style="margin-bottom:0;">
+        <p class="lp-title">📊 Tra cứu điểm học tập</p>
+        <p style="font-size:12px;color:#7A8AB8;margin:0 0 12px;line-height:1.5;">Nhập <b style="color:#0D1A40;">mã tra cứu</b> của con (6 chữ số ngày tháng năm sinh)<br>Ví dụ sinh ngày <b>25/12/2010</b> → mã: <span style="font-family:monospace;background:#EEF3FF;padding:2px 7px;border-radius:5px;color:#1048C8;font-weight:700;">251210</span></span></p>
+        <input type="text" id="studentCodeInput" placeholder="6 chữ số" inputmode="numeric" maxlength="6" style="width:100%;font-family:monospace;font-size:28px;font-weight:800;background:#fff;border:1.5px solid rgba(16,72,200,0.20);border-radius:12px;padding:12px;color:#0D1A40;text-align:center;letter-spacing:.2em;margin-bottom:10px;box-sizing:border-box;">
+        <p class="lp-err" id="codeErr"></p>
+        <button class="lp-submit" id="codeSubmit">🔍 Tra cứu điểm</button>
+      </div>`;
+  } else if(loginStep === 'show-scores'){
+    const d = scoreData;
+    if(!d){ body = '<p style="color:#7A8AB8;text-align:center;">Không có dữ liệu.</p>'; }
+    else {
+      // Tìm số cột TX tối đa
+      const maxTx = Math.max(...(d.scores.map(s=>s.tx.length)), 1);
+      const txHeaders = Array.from({length:maxTx},(_,i)=>`<th>TX${i+1}</th>`).join('');
+      const fmt = v => { const n=parseFloat(v); return isNaN(n)?'':n%1===0?String(n):n.toFixed(1); };
+      const scoreRows = d.scores.map(s => {
+        const txCells = Array.from({length:maxTx},(_,i)=>`<td>${s.tx[i]!==undefined?fmt(s.tx[i]):''}</td>`).join('');
+        return `<tr>
+          <td style="text-align:left;padding:8px 10px;font-weight:600;">${s.icon} ${s.subject}</td>
+          ${txCells}
+          <td>${s.gk?fmt(s.gk):''}</td>
+          <td>${s.ck?fmt(s.ck):''}</td>
+        </tr>`;
+      }).join('');
+      const nxHtml = d.nhanXet&&d.nhanXet.length ? d.nhanXet.map(nx=>`
+        <div style="margin-top:8px;background:#F6F9FF;border-radius:12px;padding:12px 14px;border-left:3px solid #1048C8;">
+          <div style="font-size:11px;font-weight:700;color:#1048C8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">${nx.label}</div>
+          <div style="font-size:13px;color:#0D1A40;line-height:1.6;">${nx.nd}</div>
+        </div>`).join('') : '';
+      body = `
+        <button id="btnBack" style="align-self:flex-start;background:#EEF3FF;border:1px solid rgba(16,72,200,0.15);border-radius:10px;padding:6px 14px;font-family:inherit;font-size:12px;font-weight:600;color:#3A4A80;cursor:pointer;margin-bottom:8px;">← Tra cứu lại</button>
+        <div style="background:linear-gradient(135deg,#dce8ff,#EEF3FF);border-radius:13px;padding:13px 15px;width:100%;margin-bottom:10px;box-sizing:border-box;">
+          <div style="font-size:17px;font-weight:800;color:#0D1A40;">${d.name}</div>
+          <div style="display:flex;gap:14px;margin-top:3px;">
+            <span style="font-size:12px;color:#3A4A80;">Lớp: <b>10B1</b></span>
+            <span style="font-size:12px;color:#3A4A80;">Ngày sinh: <b>${d.dob}</b></span>
+          </div>
+        </div>
+        <div style="width:100%;overflow-x:auto;border-radius:10px;border:1px solid #dce8ff;">
+          <table class="score-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:340px;">
+            <thead>
+              <tr style="background:#1048C8;color:#fff;">
+                <th style="padding:9px 10px;text-align:left;font-weight:700;min-width:110px;">Môn học</th>
+                ${txHeaders}
+                <th>GK</th><th>CK</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${scoreRows || '<tr><td colspan="9" style="text-align:center;padding:20px;color:#A0AABF;">Chưa có dữ liệu điểm</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        ${nxHtml}`;
+    }
   }
+
+  const tagline = {
+    'pick-type':'Bạn vào đây với tư cách gì?',
+    'pick-role':'Chọn vai trò của bạn',
+    'enter-pass':'Nhập mật khẩu để tiếp tục',
+    'enter-student-code':'Tra cứu điểm học tập',
+    'show-scores':'Bảng điểm học kỳ',
+  }[loginStep] || '';
 
   app.innerHTML = `
     <div class="login-splash">
@@ -694,8 +846,8 @@ function renderLoginScreen(){
       <div class="splash-blob2"></div>
       <div class="splash-blob3"></div>
       <p class="brand">Lớp 10B1 · Marie Curie</p>
-      <h1>Xin chào 👋</h1>
-      <p class="tagline">${loginStep==='pick-type'?'Bạn vào đây với tư cách gì?':loginStep==='pick-role'?'Chọn vai trò của bạn':'Nhập mật khẩu để tiếp tục'}</p>
+      <h1>${loginStep==='show-scores'?'Điểm học tập 📋':'Xin chào 👋'}</h1>
+      <p class="tagline">${tagline}</p>
       <div class="login-glass-card">${body}</div>
     </div>`;
 
@@ -704,6 +856,8 @@ function renderLoginScreen(){
   if(btnBCS) btnBCS.onclick = ()=>{ loginStep='pick-role'; renderLoginScreen(); };
   const btnViewer = document.getElementById('btnIsViewer');
   if(btnViewer) btnViewer.onclick = ()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; sessionSave(); render(); };
+  const btnParent = document.getElementById('btnIsParent');
+  if(btnParent) btnParent.onclick = ()=>{ loginStep='enter-student-code'; renderLoginScreen(); setTimeout(()=>{ const el=document.getElementById('studentCodeInput'); if(el) el.focus(); },50); };
 
   // Step 2 handlers
   app.querySelectorAll('[data-login-role]').forEach(btn=>{
@@ -719,9 +873,36 @@ function renderLoginScreen(){
   const btnBack = document.getElementById('btnBack');
   if(btnBack) btnBack.onclick = ()=>{
     if(loginStep==='enter-pass'){ loginStep='pick-role'; state.loginSelectedRole=null; }
-    else { loginStep='pick-type'; }
+    else { loginStep='pick-type'; scoreData=null; }
     renderLoginScreen();
   };
+
+  // Mã tra cứu lookup
+  const codeSubmit = document.getElementById('codeSubmit');
+  if(codeSubmit) codeSubmit.onclick = async ()=>{
+    const code = document.getElementById('studentCodeInput').value.trim();
+    const errEl = document.getElementById('codeErr');
+    if(!code || !/^\d{6}$/.test(code)){
+      errEl.textContent='Vui lòng nhập đúng 6 chữ số. Ví dụ: 070111'; return;
+    }
+    codeSubmit.disabled=true; codeSubmit.textContent='⏳ Đang tra cứu…';
+    errEl.textContent='';
+    const student = await lookupStudentByCode(code);
+    if(!student){
+      codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
+      errEl.textContent='Không tìm thấy. Kiểm tra lại mã hoặc liên hệ GVCN.'; return;
+    }
+    const scores = await fetchStudentScores(student.stt);
+    codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
+    scoreData = { stt:student.stt, name:student.name, dob:student.dob, nhanXet:student.nhanXet||[], scores:scores||[] };
+    loginStep = 'show-scores';
+    renderLoginScreen();
+  };
+  const codeInput = document.getElementById('studentCodeInput');
+  if(codeInput){
+    codeInput.oninput = ()=>{ codeInput.value = codeInput.value.replace(/\D/g,'').slice(0,6); };
+    codeInput.onkeydown = e=>{ if(e.key==='Enter' && codeSubmit) codeSubmit.click(); };
+  }
 
   // Step 3: submit password
   const submitBtn = document.getElementById('splashSubmit');
