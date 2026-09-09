@@ -322,6 +322,45 @@ let ldDayData = null, ltData = null, htData = null, ldConfig = null;
 function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function monthStr(dateStr){ return dateStr.slice(0,7); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+// ── CSV Export ──
+function downloadCSV(filename, rows){
+  const bom = '﻿'; // UTF-8 BOM để Excel đọc tiếng Việt
+  const csv = bom + rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+async function exportAttendanceCSV(){
+  const att = await sget('attendance:'+state.date) || {status:{}, permission:{}};
+  const rows = [['STT','Họ và tên','Tổ','Tình trạng','Phép']];
+  state.roster.forEach((s,i)=>{
+    const st = att.status[s.id]||'present';
+    const perm = (att.permission||{})[s.id]||'';
+    rows.push([i+1, s.name, s.to||'', st==='present'?'Đúng giờ':st==='late'?'Muộn':'Vắng', perm==='phep'?'Có phép':perm==='khongphep'?'Không phép':'']);
+  });
+  downloadCSV('diemdanh_'+state.date+'.csv', rows);
+}
+async function exportDisciplineCSV(){
+  const log = await sget('discipline:log:'+state.month) || [];
+  const rows = [['Ngày','Tổ','Học sinh','Loại','Hành vi','Điểm/Gậy']];
+  log.forEach(e=>{
+    const s = state.roster.find(x=>x.id===e.studentId);
+    rows.push([e.date, s?.to||'', s?.name||'(đã xoá)', e.type==='cong'?'Điểm cộng':'Vi phạm', e.category, e.type==='cong'?'+'+e.value:e.value+'🥢']);
+  });
+  downloadCSV('nennep_'+state.month+'.csv', rows);
+}
+async function exportStudyCSV(){
+  const study = await sget('study:'+state.date) || {status:{}};
+  const rows = [['STT','Họ và tên','Tổ','Bài tập']];
+  state.roster.forEach((s,i)=>{
+    const st = study.status[s.id]||'full';
+    const label = st==='full'?'Đủ bài':st==='partial'?'Thiếu bài':st==='none'?'Không làm':'Thiếu dụng cụ';
+    rows.push([i+1, s.name, s.to||'', label]);
+  });
+  downloadCSV('hoctap_'+state.date+'.csv', rows);
+}
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -335,8 +374,50 @@ const API_TOKEN = 'Lop10b1@2026';
 // ====================================
 
 const _cache = {};
+
+// ── localStorage (stale-while-revalidate, TTL 10 phút) ──
+const LS_PFX = 'lop10b1:';
+const LS_TTL = 10 * 60 * 1000;
+function lsGet(key){
+  try{
+    const raw = localStorage.getItem(LS_PFX + key);
+    if(!raw) return undefined;
+    const {v, t} = JSON.parse(raw);
+    if(Date.now() - t > LS_TTL) return undefined;
+    return v;
+  } catch(e){ return undefined; }
+}
+function lsSet(key, value){
+  try{ localStorage.setItem(LS_PFX + key, JSON.stringify({v:value, t:Date.now()})); } catch(e){}
+}
+
+// ── Session persistence (7 ngày) ──
+const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
+function sessionSave(){
+  try{
+    localStorage.setItem(LS_PFX+'session', JSON.stringify({
+      unlocked: state.unlocked, tab: state.tab, isViewer: state.isViewer, t: Date.now()
+    }));
+  } catch(e){}
+}
+function sessionLoad(){
+  try{
+    const raw = localStorage.getItem(LS_PFX+'session');
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    if(Date.now() - s.t > SESSION_TTL) return null;
+    return s;
+  } catch(e){ return null; }
+}
+function sessionClear(){
+  try{ localStorage.removeItem(LS_PFX+'session'); } catch(e){}
+}
+
 async function sget(key){
   if(key in _cache) return _cache[key];
+  // Kiểm tra localStorage trước (tức thì, không cần network)
+  const ls = lsGet(key);
+  if(ls !== undefined){ _cache[key] = ls; return ls; }
   try{
     const url = `${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
@@ -344,12 +425,18 @@ async function sget(key){
     if(data.error) throw new Error(data.error);
     const val = data.value ? JSON.parse(data.value) : null;
     _cache[key] = val;
+    lsSet(key, val);
     return val;
   } catch(e){ console.error('sget failed', key, e); return null; }
 }
 async function sgetMany(keys){
-  // Lọc ra các key chưa có trong cache
-  const missing = keys.filter(k => !(k in _cache));
+  // Lấy từ cache/localStorage trước
+  const missing = [];
+  keys.forEach(k=>{
+    if(k in _cache) return;
+    const ls = lsGet(k);
+    if(ls !== undefined){ _cache[k] = ls; } else { missing.push(k); }
+  });
   if(missing.length > 0){
     try{
       const url = `${API_URL}?action=getMany&keys=${encodeURIComponent(JSON.stringify(missing))}&token=${encodeURIComponent(API_TOKEN)}`;
@@ -357,18 +444,20 @@ async function sgetMany(keys){
       const data = await res.json();
       if(data.values){
         Object.entries(data.values).forEach(([k,v])=>{
-          _cache[k] = v ? JSON.parse(v) : null;
+          const parsed = v ? JSON.parse(v) : null;
+          _cache[k] = parsed;
+          lsSet(k, parsed);
         });
       }
     } catch(e){ console.error('sgetMany failed', e); }
   }
-  // Trả về object {key: value} cho tất cả keys được yêu cầu
   const result = {};
   keys.forEach(k => { result[k] = k in _cache ? _cache[k] : null; });
   return result;
 }
 async function sset(key, value){
-  _cache[key] = value; // cập nhật cache ngay, không chờ GAS
+  _cache[key] = value;
+  lsSet(key, value); // lưu ngay vào localStorage
   try{
     const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
@@ -386,7 +475,7 @@ async function doLogin(role, passcode){
   } catch(e){ return false; }
 }
 
-async function loadRoster(){ let r = await sget('roster'); state.roster = Array.isArray(r) ? r : []; }
+async function loadRoster(){ let r = await sget('roster'); state.roster = Array.isArray(r) ? r : []; lsSet('roster', state.roster); }
 async function saveRoster(){ await sset('roster', state.roster); }
 
 async function init(){
@@ -399,23 +488,47 @@ async function init(){
       </div>`;
     return;
   }
-  await loadRoster();
+
+  // Khôi phục session (nếu còn hạn)
+  const saved = sessionLoad();
+  if(saved && (Object.keys(saved.unlocked||{}).length > 0 || saved.isViewer)){
+    state.unlocked = saved.unlocked || {};
+    state.tab = saved.tab || 'home';
+    state.isViewer = !!saved.isViewer;
+    state.showLogin = false;
+  }
+
+  // Tải roster từ localStorage ngay lập tức (không cần chờ GAS)
+  const lsRoster = lsGet('roster');
+  if(lsRoster !== undefined){
+    state.roster = Array.isArray(lsRoster) ? lsRoster : [];
+    _cache['roster'] = state.roster;
+  }
+
+  // Hiện login screen NGAY — không chờ GAS nữa
   state.loading = false;
   render();
-  // Prefetch data cho ngày hôm nay vào cache ngay sau khi render
-  setTimeout(()=>{
-    const today = state.date;
-    const month = state.month;
-    // 1 request duy nhất thay vì 6 request riêng lẻ
-    sgetMany([
-      'attendance:'+today,
-      'study:'+today,
-      'duty:'+today,
-      'duty:config',
-      'discipline:log:'+month,
-      'assignments',
-    ]);
-  }, 100);
+
+  // Prefetch song song: roster + data hôm nay (1 batch duy nhất)
+  const today = state.date;
+  const month = state.month;
+  const prefetchKeys = [
+    'roster',
+    'attendance:'+today,
+    'study:'+today,
+    'duty:'+today,
+    'duty:config',
+    'discipline:log:'+month,
+    'assignments',
+  ];
+  sgetMany(prefetchKeys).then(results => {
+    const freshRoster = results['roster'];
+    if(freshRoster !== null && JSON.stringify(freshRoster) !== JSON.stringify(state.roster)){
+      state.roster = Array.isArray(freshRoster) ? freshRoster : [];
+      lsSet('roster', state.roster);
+      if(!state.showLogin) render(); // cập nhật nếu đã đăng nhập
+    }
+  });
 }
 
 function toggleTheme(){
@@ -435,32 +548,52 @@ const LOGIN_ROLES = [
   {key:'lop-truong', tab:'lt', label:'Lớp trưởng', icon:'⭐', color:'#C07878'},
   {key:'hoc-tap', tab:'hoctap', label:'LP Học tập', icon:'📚', color:'#5B8EA6'},
   {key:'lao-dong', tab:'laodong', label:'LP Lao động', icon:'🧹', color:'#6A9E7A'},
-  {key:'to-1', tab:'kyluat', label:'Tổ trưởng 1', icon:'1️⃣', color:'#C19A3E'},
-  {key:'to-2', tab:'kyluat', label:'Tổ trưởng 2', icon:'2️⃣', color:'#C19A3E'},
-  {key:'to-3', tab:'kyluat', label:'Tổ trưởng 3', icon:'3️⃣', color:'#C19A3E'},
+  {key:'to-1', tab:'kyluat', label:'Tổ trưởng Tổ 1', icon:'1️⃣', color:'#C19A3E'},
+  {key:'to-2', tab:'kyluat', label:'Tổ trưởng Tổ 2', icon:'2️⃣', color:'#C19A3E'},
+  {key:'to-3', tab:'kyluat', label:'Tổ trưởng Tổ 3', icon:'3️⃣', color:'#C19A3E'},
   {key:'gvcn', tab:'home', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
 ];
+// loginStep: 'pick-type' | 'pick-role' | 'enter-pass'
+let loginStep = 'pick-type';
 
 function renderLoginScreen(){
   const app = document.getElementById('app');
   const sel = state.loginSelectedRole;
-  const roleCards = LOGIN_ROLES.map(r=>`
-    <button class="role-card${sel&&sel.key===r.key?' selected':''}" data-login-role="${r.key}" style="--sel-color:${r.color}">
-      <span class="rc-icon-wrap"><span style="font-size:22px;">${r.icon}</span></span>
-      <span class="rc-label">${r.label}</span>
-    </button>`).join('') + `
-    <button class="role-card viewer-card" id="viewerCardBtn" style="--sel-color:#9A8B82">
-      <span class="rc-icon-wrap"><span style="font-size:22px;">👀</span></span>
-      <span class="rc-label">Xem tự do</span>
-    </button>`;
 
-  const passBox = sel ? `
-    <div class="login-pass-box" id="loginPassBox">
-      <p class="lp-title"><span>${sel.icon}</span> ${sel.label}</p>
-      <input type="password" id="splashPass" placeholder="Mật khẩu được cấp…" autocomplete="current-password">
-      <p class="lp-err" id="splashErr"></p>
-      <button class="lp-submit" id="splashSubmit" style="background:${sel.color};color:${['#25F4EE','#25D366','#FFB800'].includes(sel.color)?'#000':'#fff'}">Mở khoá →</button>
-    </div>` : '';
+  let body = '';
+  if(loginStep === 'pick-type'){
+    body = `
+      <div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px;">
+        <button id="btnIsBCS" style="padding:20px 16px;border-radius:18px;border:none;background:var(--surf);box-shadow:var(--shadow-sm);font-family:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;">
+          <span style="font-size:26px;width:44px;text-align:center;">🏫</span>
+          <span>Tôi là ban cán sự lớp<br><span style="font-size:12px;font-weight:400;color:var(--muted);">Cần nhập mật khẩu được cấp</span></span>
+        </button>
+        <button id="btnIsViewer" style="padding:20px 16px;border-radius:18px;border:none;background:var(--surf);box-shadow:var(--shadow-sm);font-family:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;">
+          <span style="font-size:26px;width:44px;text-align:center;">👀</span>
+          <span>Tôi chỉ muốn xem<br><span style="font-size:12px;font-weight:400;color:var(--muted);">Xem báo cáo, không cần đăng nhập</span></span>
+        </button>
+      </div>`;
+  } else if(loginStep === 'pick-role'){
+    const roleList = LOGIN_ROLES.map(r=>`
+      <button class="role-list-item" data-login-role="${r.key}" style="padding:14px 16px;border-radius:14px;border:none;background:var(--surf);box-shadow:var(--shadow-sm);font-family:inherit;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;width:100%;max-width:340px;">
+        <span style="font-size:20px;width:32px;text-align:center;">${r.icon}</span>
+        <span>${r.label}</span>
+        <span style="margin-left:auto;color:var(--muted);font-size:16px;">›</span>
+      </button>`).join('');
+    body = `
+      <button id="btnBack" style="align-self:flex-start;background:none;border:1px solid var(--border);border-radius:10px;padding:6px 14px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;margin-bottom:4px;">← Quay lại</button>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 12px;">Bạn là ai trong lớp?</p>
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%;">${roleList}</div>`;
+  } else if(loginStep === 'enter-pass' && sel){
+    body = `
+      <button id="btnBack" style="align-self:flex-start;background:none;border:1px solid var(--border);border-radius:10px;padding:6px 14px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;margin-bottom:4px;">← Quay lại</button>
+      <div class="login-pass-box" style="margin-bottom:0;">
+        <p class="lp-title"><span>${sel.icon}</span> ${sel.label}</p>
+        <input type="password" id="splashPass" placeholder="Mật khẩu được cấp…" autocomplete="current-password">
+        <p class="lp-err" id="splashErr"></p>
+        <button class="lp-submit" id="splashSubmit" style="background:${sel.color};color:#fff;">Mở khoá →</button>
+      </div>`;
+  }
 
   app.innerHTML = `
     <div class="login-splash">
@@ -468,25 +601,35 @@ function renderLoginScreen(){
       <div class="splash-blob2"></div>
       <p class="brand">Lớp 10B1 · Marie Curie</p>
       <h1>Xin chào 👋</h1>
-      <p class="tagline">Chọn vai trò của bạn để tiếp tục</p>
-      <div class="role-grid">${roleCards}</div>
-      ${passBox}
-      <button class="viewer-btn" id="viewerBtn" style="display:none">Xem không cần đăng nhập</button>
+      <p class="tagline" style="margin-bottom:24px;">${loginStep==='pick-type'?'Bạn vào đây với tư cách gì?':loginStep==='pick-role'?'Chọn vai trò của bạn':'Nhập mật khẩu để tiếp tục'}</p>
+      ${body}
     </div>`;
 
-  // (no theme toggle)
+  // Step 1 handlers
+  const btnBCS = document.getElementById('btnIsBCS');
+  if(btnBCS) btnBCS.onclick = ()=>{ loginStep='pick-role'; renderLoginScreen(); };
+  const btnViewer = document.getElementById('btnIsViewer');
+  if(btnViewer) btnViewer.onclick = ()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; sessionSave(); render(); };
 
-  // Role card click
+  // Step 2 handlers
   app.querySelectorAll('[data-login-role]').forEach(btn=>{
     btn.onclick = ()=>{
-      const key = btn.dataset.loginRole;
-      state.loginSelectedRole = LOGIN_ROLES.find(r=>r.key===key) || null;
+      state.loginSelectedRole = LOGIN_ROLES.find(r=>r.key===btn.dataset.loginRole) || null;
+      loginStep = 'enter-pass';
       renderLoginScreen();
-      setTimeout(()=>{ const p=document.getElementById('splashPass'); if(p) p.focus(); },50);
+      setTimeout(()=>{ const p=document.getElementById('splashPass'); if(p) p.focus(); }, 50);
     };
   });
 
-  // Submit
+  // Back button
+  const btnBack = document.getElementById('btnBack');
+  if(btnBack) btnBack.onclick = ()=>{
+    if(loginStep==='enter-pass'){ loginStep='pick-role'; state.loginSelectedRole=null; }
+    else { loginStep='pick-type'; }
+    renderLoginScreen();
+  };
+
+  // Step 3: submit password
   const submitBtn = document.getElementById('splashSubmit');
   if(submitBtn) submitBtn.onclick = async ()=>{
     const pass = document.getElementById('splashPass').value;
@@ -496,13 +639,12 @@ function renderLoginScreen(){
     submitBtn.disabled = false; submitBtn.textContent = 'Mở khoá →';
     if(ok){
       state.unlocked[sel.key] = true;
-      // For kyluat tab, also set the right sub-tổ
-      if(sel.tab === 'kyluat'){
-        state.sub.kyluat = sel.key;
-      }
+      if(sel.tab === 'kyluat') state.sub.kyluat = sel.key;
       state.tab = sel.tab;
       state.showLogin = false;
       state.loginSelectedRole = null;
+      loginStep = 'pick-type';
+      sessionSave(); // nhớ session 7 ngày
       render();
     } else {
       errEl.textContent = 'Sai mật khẩu, thử lại.';
@@ -510,16 +652,8 @@ function renderLoginScreen(){
       document.getElementById('splashPass').focus();
     }
   };
-  // Enter key on password
   const passInput = document.getElementById('splashPass');
   if(passInput) passInput.onkeydown = e=>{ if(e.key==='Enter' && submitBtn) submitBtn.click(); };
-
-  // Viewer (no login) — both bottom button (kept for fallback) and grid card
-  const enterViewer = ()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; render(); };
-  const viewerCardBtn = document.getElementById('viewerCardBtn');
-  if(viewerCardBtn) viewerCardBtn.onclick = enterViewer;
-  const viewerBtn = document.getElementById('viewerBtn');
-  if(viewerBtn) viewerBtn.onclick = enterViewer;
 }
 
 function cover(title, sub, color, showDate){
@@ -543,7 +677,7 @@ function tabbar(){
     : Object.entries(ROLE_META).filter(([k])=>k!=='public');
   const loginBtn = state.isViewer
     ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
-    : '';
+    : `<button data-act="logout" title="Đăng xuất" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🚪</span>Thoát</button>`;
   return `<div class="tabbar">${entries.map(([key,r])=>`
     <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
       <span class="ticon">${r.icon}</span>${r.short}
@@ -637,15 +771,21 @@ async function renderPublic(){
   const present=[], late=[], absent=[];
   state.roster.forEach(s=>{
     const st = att.status[s.id]||'present';
-    if(st==='present') present.push(s.name);
-    else if(st==='late') late.push(s.name);
-    else absent.push(s.name);
+    if(st==='present') present.push(s);
+    else if(st==='late') late.push(s);
+    else absent.push(s);
   });
+  const permLabel = (s)=>{
+    const p = (att.permission||{})[s.id];
+    if(p==='phep') return ` <span style="font-size:10px;background:rgba(92,143,106,.15);color:var(--ok);border-radius:6px;padding:2px 7px;font-weight:700;">Có phép</span>`;
+    if(p==='khongphep') return ` <span style="font-size:10px;background:rgba(184,85,85,.12);color:var(--bad);border-radius:6px;padding:2px 7px;font-weight:700;">Không phép</span>`;
+    return '';
+  };
   const attHtml = `
     <div class="card">
       <div class="row"><span class="name" style="color:var(--ok);">✅ Đúng giờ</span><span style="font-weight:700;">${present.length} bạn</span></div>
-      ${late.length?`<div class="row"><span class="name" style="color:var(--warn);">⏰ Muộn</span><span style="font-size:13px;color:var(--muted);">${late.join(', ')}</span></div>`:''}
-      ${absent.length?`<div class="row"><span class="name" style="color:var(--bad);">🚫 Vắng</span><span style="font-size:13px;color:var(--muted);">${absent.join(', ')}</span></div>`:''}
+      ${late.length?`<div class="row"><span class="name" style="color:var(--warn);">⏰ Muộn</span><span style="font-size:13px;color:var(--muted);">${late.map(s=>escapeHtml(s.name)+permLabel(s)).join(', ')}</span></div>`:''}
+      ${absent.length?`<div class="row"><span class="name" style="color:var(--bad);">🚫 Vắng</span><span style="font-size:13px;color:var(--muted);">${absent.map(s=>escapeHtml(s.name)+permLabel(s)).join(', ')}</span></div>`:''}
       ${!late.length&&!absent.length?'<p class="empty" style="padding:8px 0;">Cả lớp đi đúng giờ hôm nay 🎉</p>':''}
     </div>`;
 
@@ -753,13 +893,20 @@ async function renderLT(){
   const present = state.roster.filter(s => (ltData.status[s.id]||'present')==='present').length;
   const rows = state.roster.map((s,i)=>{
     const st = ltData.status[s.id] || 'present';
-    return `<div class="row">
+    const perm = (ltData.permission||{})[s.id];
+    const permRow = (st==='late'||st==='absent') ? `
+      <div class="seg" data-id="${s.id}" data-group="perm" style="width:100%;margin-top:5px;">
+        <button data-val="phep" class="${perm==='phep'?'on-ok':''}">✅ Có phép</button>
+        <button data-val="khongphep" class="${perm==='khongphep'?'on-bad':''}">🔴 Không phép</button>
+      </div>` : '';
+    return `<div class="row" style="flex-wrap:wrap;">
       <span class="idx">${i+1}</span><span class="name">${escapeHtml(s.name)}</span>
       <div class="seg" data-id="${s.id}" data-group="att">
         <button data-val="present" class="${st==='present'?'on-ok':''}">Đúng giờ</button>
         <button data-val="late" class="${st==='late'?'on-warn':''}">Muộn</button>
         <button data-val="absent" class="${st==='absent'?'on-bad':''}">Vắng</button>
       </div>
+      ${permRow}
     </div>`;
   }).join('');
   const phoneOk = ltData.phoneCount === present && state.roster.length>0;
@@ -841,9 +988,12 @@ async function computeWeekly(){
   const dates = [];
   const d = new Date(state.date+'T00:00:00');
   for(let i=0;i<7;i++){ const dd=new Date(d); dd.setDate(d.getDate()-i); dates.push(dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0')); }
+  // 1 request duy nhất thay vì 7 request riêng lẻ
+  const keys = dates.map(dt => 'study:'+dt);
+  const fetched = await sgetMany(keys);
   const result = {};
-  const recs = await Promise.all(dates.map(dt=> sget('study:'+dt)));
-  recs.forEach(rec=>{
+  dates.forEach(dt=>{
+    const rec = fetched['study:'+dt];
     if(!rec) return;
     for(const [sid, st] of Object.entries(rec.status||{})){
       if(!result[sid]) result[sid] = {partial:0, none:0, noequip:0};
@@ -1189,6 +1339,12 @@ async function renderGVCN(){
     ${disciplineRows}
     <h2 class="section">Phân công nhiệm vụ</h2>
     <div class="card">${assignRows}</div>
+    <h2 class="section">Xuất dữ liệu</h2>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="primary-btn" data-act="csv-att" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất điểm danh hôm nay (.csv)</button>
+      <button class="primary-btn" data-act="csv-study" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất học tập hôm nay (.csv)</button>
+      <button class="primary-btn" data-act="csv-disc" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất nền nếp tháng này (.csv)</button>
+    </div>
   </main>`;
 }
 
@@ -1210,7 +1366,14 @@ function attachHandlers(){
 
   app.querySelectorAll('[data-tab]').forEach(btn=>{ btn.onclick = ()=>{ state.tab = btn.dataset.tab; render(); }; });
   const goLoginBtn = app.querySelector('[data-act="go-login"]');
-  if(goLoginBtn) goLoginBtn.onclick = ()=>{ state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; render(); };
+  if(goLoginBtn) goLoginBtn.onclick = ()=>{ state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; loginStep='pick-type'; render(); };
+  const logoutBtn = app.querySelector('[data-act="logout"]');
+  if(logoutBtn) logoutBtn.onclick = ()=>{
+    if(!confirm('Đăng xuất và quay về màn hình chọn vai trò?')) return;
+    state.unlocked = {}; state.showLogin = true; state.isViewer = false; state.loginSelectedRole = null; loginStep='pick-type';
+    sessionClear();
+    render();
+  };
   app.querySelectorAll('[data-subtab]').forEach(btn=>{
     btn.onclick = ()=>{
       const [group,key] = btn.dataset.subtab.split(':');
@@ -1265,7 +1428,23 @@ function attachHandlers(){
 
   app.querySelectorAll('[data-group="att"]').forEach(seg=>{
     seg.querySelectorAll('button').forEach(btn=>{
-      btn.onclick = ()=>{ ltData.status[seg.dataset.id] = btn.dataset.val; renderAsync(); sset('attendance:'+state.date, ltData); };
+      btn.onclick = ()=>{
+        ltData.status[seg.dataset.id] = btn.dataset.val;
+        // Reset permission khi trở về đúng giờ
+        if(btn.dataset.val === 'present'){
+          if(ltData.permission) delete ltData.permission[seg.dataset.id];
+        }
+        renderAsync(); sset('attendance:'+state.date, ltData);
+      };
+    });
+  });
+  app.querySelectorAll('[data-group="perm"]').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(btn=>{
+      btn.onclick = ()=>{
+        if(!ltData.permission) ltData.permission = {};
+        ltData.permission[seg.dataset.id] = btn.dataset.val;
+        renderAsync(); sset('attendance:'+state.date, ltData);
+      };
     });
   });
   const phoneInc = app.querySelector('[data-act="phone-inc"]');
@@ -1401,6 +1580,13 @@ function attachHandlers(){
   // Submit tất cả
   const existingSubBtn = app.querySelector('[data-act="submit-ticks"]');
   if(existingSubBtn) existingSubBtn.onclick = submitTicksHandler;
+
+  const csvAtt = app.querySelector('[data-act="csv-att"]');
+  if(csvAtt) csvAtt.onclick = exportAttendanceCSV;
+  const csvStudy = app.querySelector('[data-act="csv-study"]');
+  if(csvStudy) csvStudy.onclick = exportStudyCSV;
+  const csvDisc = app.querySelector('[data-act="csv-disc"]');
+  if(csvDisc) csvDisc.onclick = exportDisciplineCSV;
 
   app.querySelectorAll('[data-act="edit-disc"]').forEach(btn=>{
     btn.onclick = async ()=>{
