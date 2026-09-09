@@ -308,7 +308,7 @@ let state = {
   month: monthStr(todayStr()),
   roster: null,
   loading: true,
-  sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
+  sub: {gvcn:'baocao', hoctap:'today', laodong:'today', kyluat:'to-1'},
   unlocked: {},
   showLogin: true,
   loginSelectedRole: null,
@@ -333,14 +333,21 @@ function downloadCSV(filename, rows){
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
 async function exportAttendanceCSV(){
-  const att = await sget('attendance:'+state.date) || {status:{}, permission:{}};
-  const rows = [['STT','Họ và tên','Tổ','Tình trạng','Phép']];
-  state.roster.forEach((s,i)=>{
-    const st = att.status[s.id]||'present';
-    const perm = (att.permission||{})[s.id]||'';
-    rows.push([i+1, s.name, s.to||'', st==='present'?'Đúng giờ':st==='late'?'Muộn':'Vắng', perm==='phep'?'Có phép':perm==='khongphep'?'Không phép':'']);
+  const [y, m] = state.month.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const dates = [];
+  for(let d=1;d<=daysInMonth;d++) dates.push(y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
+  const all = await sgetMany(dates.map(dt=>'attendance:'+dt));
+  const rows = [['Ngày','STT','Họ và tên','Tổ','Tình trạng','Phép']];
+  dates.forEach(dt=>{
+    const att = all['attendance:'+dt] || {status:{}, permission:{}};
+    state.roster.forEach((s,i)=>{
+      const st = att.status[s.id]||'present';
+      const perm = (att.permission||{})[s.id]||'';
+      rows.push([formatDateVN(dt), i+1, s.name, s.to||'', st==='present'?'Đúng giờ':st==='late'?'Muộn':'Vắng', perm==='phep'?'Có phép':perm==='khongphep'?'Không phép':'']);
+    });
   });
-  downloadCSV('diemdanh_'+state.date+'.csv', rows);
+  downloadCSV('diemdanh_'+state.month+'.csv', rows);
 }
 async function exportDisciplineCSV(){
   const log = await sget('discipline:log:'+state.month) || [];
@@ -352,14 +359,21 @@ async function exportDisciplineCSV(){
   downloadCSV('nennep_'+state.month+'.csv', rows);
 }
 async function exportStudyCSV(){
-  const study = await sget('study:'+state.date) || {status:{}};
-  const rows = [['STT','Họ và tên','Tổ','Bài tập']];
-  state.roster.forEach((s,i)=>{
-    const st = study.status[s.id]||'full';
-    const label = st==='full'?'Đủ bài':st==='partial'?'Thiếu bài':st==='none'?'Không làm':'Thiếu dụng cụ';
-    rows.push([i+1, s.name, s.to||'', label]);
+  const [y, m] = state.month.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const dates = [];
+  for(let d=1;d<=daysInMonth;d++) dates.push(y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
+  const all = await sgetMany(dates.map(dt=>'study:'+dt));
+  const rows = [['Ngày','STT','Họ và tên','Tổ','Bài tập']];
+  dates.forEach(dt=>{
+    const study = all['study:'+dt] || {status:{}};
+    state.roster.forEach((s,i)=>{
+      const st = study.status[s.id]||'full';
+      const label = st==='full'?'Đủ bài':st==='partial'?'Thiếu bài':st==='none'?'Không làm':'Thiếu dụng cụ';
+      rows.push([formatDateVN(dt), i+1, s.name, s.to||'', label]);
+    });
   });
-  downloadCSV('hoctap_'+state.date+'.csv', rows);
+  downloadCSV('hoctap_'+state.month+'.csv', rows);
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -551,7 +565,7 @@ const LOGIN_ROLES = [
   {key:'to-1', tab:'kyluat', label:'Tổ trưởng Tổ 1', icon:'1️⃣', color:'#C19A3E'},
   {key:'to-2', tab:'kyluat', label:'Tổ trưởng Tổ 2', icon:'2️⃣', color:'#C19A3E'},
   {key:'to-3', tab:'kyluat', label:'Tổ trưởng Tổ 3', icon:'3️⃣', color:'#C19A3E'},
-  {key:'gvcn', tab:'home', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
+  {key:'gvcn', tab:'gvcn', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
 ];
 // loginStep: 'pick-type' | 'pick-role' | 'enter-pass'
 let loginStep = 'pick-type';
@@ -674,7 +688,7 @@ function cover(title, sub, color, showDate){
 function tabbar(){
   const entries = state.isViewer
     ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
-    : Object.entries(ROLE_META).filter(([k])=>k!=='public');
+    : Object.entries(ROLE_META).filter(([k])=>k!=='public' && k!=='home');
   const loginBtn = state.isViewer
     ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
     : `<button data-act="logout" title="Đăng xuất" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🚪</span>Thoát</button>`;
@@ -716,9 +730,6 @@ async function renderAsync(){
   if(state.tab === 'public'){
     coverHtml = cover('Báo cáo lớp 10B1', `Xem tự do · ${formatDateVN(state.date)}`, role.color, true);
     mainHtml = await renderPublic();
-  } else if(state.tab === 'home'){
-    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh · Chỉ GVCN chỉnh sửa được`, role.color, false);
-    mainHtml = await guarded('gvcn', renderHome);
   } else if(state.tab === 'lt'){
     coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.color, true);
     mainHtml = await guarded('lop-truong', renderLT);
@@ -737,7 +748,8 @@ async function renderAsync(){
       mainHtml = await renderKyLuat(subHtml);
     }
   } else if(state.tab === 'gvcn'){
-    coverHtml = cover('GVCN', 'Tổng hợp tình hình lớp', role.color, true);
+    const gvSubLabels = {baocao:'Tổng hợp tình hình lớp', danhsach:`${state.roster.length} học sinh · Chỉ GVCN chỉnh sửa được`, phancong:'Ban cán sự lớp'};
+    coverHtml = cover('GVCN', gvSubLabels[state.sub.gvcn] || '', role.color, state.sub.gvcn === 'baocao');
     mainHtml = await guarded('gvcn', renderGVCN);
   }
 
@@ -1052,7 +1064,7 @@ async function renderLaoDong(){
     const savedDuties = await Promise.all(upDates.map(ds=> sget('duty:'+ds)));
     const rows = upDates.map((ds, i)=>{
       const saved = savedDuties[i];
-      const assigned = saved ? saved.assigned : computeAssigned(ds);
+      const assigned = saved ? saved.assigned : [];
       const selectedId = assigned[0] || '';
       const options = `<option value="">— Chưa phân công —</option>` +
         state.roster.map(s=>`<option value="${s.id}" ${s.id===selectedId?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
@@ -1259,6 +1271,52 @@ async function renderKyLuat(subHtml){
 }
 
 async function renderGVCN(){
+  const gvSubTabs = subtabs('gvcn', [['baocao','Báo cáo ngày'],['danhsach','Danh sách lớp'],['phancong','Phân công']]);
+
+  // ── Subtab: Danh sách lớp ──
+  if(state.sub.gvcn === 'danhsach'){
+    const rows = state.roster.map((s,i)=>`
+      <div class="roster-edit-row" data-id="${s.id}">
+        <span class="idx">${i+1}</span>
+        <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
+        <select class="select-to" data-id="${s.id}">
+          <option value="" ${!s.to?'selected':''}>Tổ?</option>
+          <option value="1" ${s.to===1?'selected':''}>Tổ 1</option>
+          <option value="2" ${s.to===2?'selected':''}>Tổ 2</option>
+          <option value="3" ${s.to===3?'selected':''}>Tổ 3</option>
+        </select>
+        <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
+      </div>`).join('');
+    return `<main>
+      ${gvSubTabs}
+      <h2 class="section">Học sinh (${state.roster.length})</h2>
+      <div class="card">
+        ${rows || '<p class="empty">Chưa có học sinh nào.</p>'}
+        <button class="add-btn" data-act="add-student">+ Thêm học sinh</button>
+      </div>
+      <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Chọn Tổ để tổ trưởng chỉ thấy tổ mình.</p>
+    </main>`;
+  }
+
+  // ── Subtab: Phân công ──
+  if(state.sub.gvcn === 'phancong'){
+    const assign = await sget('assignments') || {};
+    const rows = ASSIGNMENT_FIELDS.map(f=>`
+      <div class="card" style="margin-bottom:8px;">
+        <div class="week-name">${f.title}</div>
+        <div class="week-sub" style="margin-bottom:8px;">${f.desc}</div>
+        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách..." style="margin-top:0;">
+      </div>`).join('');
+    return `<main>
+      ${gvSubTabs}
+      <h2 class="section">Phân công ban cán sự</h2>
+      ${rows}
+      <button class="primary-btn" data-act="save-assignments">Lưu phân công</button>
+    </main>`;
+  }
+
+  // ── Subtab: Báo cáo ngày (default) ──
   const months3 = prevMonths(state.month, 3);
   const _batchKeys = [
     'attendance:'+state.date,
@@ -1319,6 +1377,7 @@ async function renderGVCN(){
   const assignRows = ASSIGNMENT_FIELDS.map(f=>`<div class="row"><span class="name">${f.title}</span><span class="week-sub">${escapeHtml(assignSafe[f.key]||'(chưa có)')}</span></div>`).join('');
 
   return `<main>
+    ${gvSubTabs}
     <h2 class="section">Điểm danh ${formatDateVN(state.date)}</h2>
     <div class="card">
       <div class="week-sub">🚫 Vắng: ${absentList.join(', ')||'không có'}</div>
@@ -1341,8 +1400,8 @@ async function renderGVCN(){
     <div class="card">${assignRows}</div>
     <h2 class="section">Xuất dữ liệu</h2>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <button class="primary-btn" data-act="csv-att" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất điểm danh hôm nay (.csv)</button>
-      <button class="primary-btn" data-act="csv-study" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất học tập hôm nay (.csv)</button>
+      <button class="primary-btn" data-act="csv-att" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất điểm danh tháng này (.csv)</button>
+      <button class="primary-btn" data-act="csv-study" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất học tập tháng này (.csv)</button>
       <button class="primary-btn" data-act="csv-disc" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất nền nếp tháng này (.csv)</button>
     </div>
   </main>`;
