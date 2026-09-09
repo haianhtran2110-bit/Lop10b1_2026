@@ -245,16 +245,13 @@ label.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-trans
 
 <script>
 const ROLE_META = {
-  public:{label:'Báo cáo', short:'Báo cáo', icon:'📊', color:'#A07850'},
-  home:{label:'Danh sách lớp', short:'Lớp', icon:'👥', color:'#A07850'},
+  lop:{label:'Lớp 10B1', short:'Lớp', icon:'🏫', color:'#A07850'},
   lt:{label:'Lớp trưởng', short:'LT', icon:'⭐', color:'#C07878'},
   hoctap:{label:'LP Học tập', short:'Học tập', icon:'📚', color:'#5B8EA6'},
   laodong:{label:'LP Lao động', short:'Lao động', icon:'🧹', color:'#6A9E7A'},
   kyluat:{label:'Kỷ luật', short:'Kỷ luật', icon:'🥢', color:'#C19A3E'},
-  gvcn:{label:'GVCN', short:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
 };
-// Tabs visible in viewer (no-login) mode
-const PUBLIC_TABS = ['public'];
+const PUBLIC_TABS = ['lop']; // tab mặc định cho viewer
 const ROLE_LOGIN_KEY = { lt:'lop-truong', hoctap:'hoc-tap', laodong:'lao-dong', gvcn:'gvcn' };
 
 const CONG_CATEGORIES = [
@@ -303,12 +300,12 @@ const ASSIGNMENT_FIELDS = [
 ];
 
 let state = {
-  tab: 'home',
+  tab: 'lop',
   date: todayStr(),
   month: monthStr(todayStr()),
   roster: null,
   loading: true,
-  sub: {home:'ds', hoctap:'today', laodong:'today', kyluat:'to-1'},
+  sub: {lop:'baocao', hoctap:'today', laodong:'today', kyluat:'to-1'},
   unlocked: {},
   showLogin: true,
   loginSelectedRole: null,
@@ -493,7 +490,7 @@ async function init(){
   const saved = sessionLoad();
   if(saved && (Object.keys(saved.unlocked||{}).length > 0 || saved.isViewer)){
     state.unlocked = saved.unlocked || {};
-    state.tab = saved.tab || 'home';
+    state.tab = saved.tab || 'lop';
     state.isViewer = !!saved.isViewer;
     state.showLogin = false;
   }
@@ -551,7 +548,7 @@ const LOGIN_ROLES = [
   {key:'to-1', tab:'kyluat', label:'Tổ trưởng Tổ 1', icon:'1️⃣', color:'#C19A3E'},
   {key:'to-2', tab:'kyluat', label:'Tổ trưởng Tổ 2', icon:'2️⃣', color:'#C19A3E'},
   {key:'to-3', tab:'kyluat', label:'Tổ trưởng Tổ 3', icon:'3️⃣', color:'#C19A3E'},
-  {key:'gvcn', tab:'home', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
+  {key:'gvcn', tab:'lop', label:'GVCN', icon:'👩‍🏫', color:'#9B7EC8'},
 ];
 // loginStep: 'pick-type' | 'pick-role' | 'enter-pass'
 let loginStep = 'pick-type';
@@ -672,17 +669,18 @@ function cover(title, sub, color, showDate){
 }
 
 function tabbar(){
+  // Viewer chỉ thấy tab Lớp + nút đăng nhập; BCS thấy tất cả + nút thoát
   const entries = state.isViewer
     ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
-    : Object.entries(ROLE_META).filter(([k])=>k!=='public');
-  const loginBtn = state.isViewer
+    : Object.entries(ROLE_META);
+  const actionBtn = state.isViewer
     ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
     : `<button data-act="logout" title="Đăng xuất" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🚪</span>Thoát</button>`;
   return `<div class="tabbar">${entries.map(([key,r])=>`
     <button data-tab="${key}" class="${state.tab===key?'active':''}" style="--role-color:${r.color}">
       <span class="ticon">${r.icon}</span>${r.short}
     </button>
-  `).join('')}${loginBtn}</div>`;
+  `).join('')}${actionBtn}</div>`;
 }
 
 function subtabs(group, items){
@@ -713,12 +711,9 @@ async function renderAsync(){
   const role = ROLE_META[state.tab];
   let coverHtml, mainHtml;
 
-  if(state.tab === 'public'){
-    coverHtml = cover('Báo cáo lớp 10B1', `Xem tự do · ${formatDateVN(state.date)}`, role.color, true);
-    mainHtml = await renderPublic();
-  } else if(state.tab === 'home'){
-    coverHtml = cover('Danh sách lớp', `${state.roster.length} học sinh · Chỉ GVCN chỉnh sửa được`, role.color, false);
-    mainHtml = await guarded('gvcn', renderHome);
+  if(state.tab === 'lop'){
+    coverHtml = cover('Lớp 10B1', `Báo cáo · Danh sách · Phân công`, role.color, true);
+    mainHtml = await renderLop();
   } else if(state.tab === 'lt'){
     coverHtml = cover('Lớp trưởng', 'Điểm danh · Thu điện thoại · Kiểm tra hòm', role.color, true);
     mainHtml = await guarded('lop-truong', renderLT);
@@ -736,9 +731,6 @@ async function renderAsync(){
     } else {
       mainHtml = await renderKyLuat(subHtml);
     }
-  } else if(state.tab === 'gvcn'){
-    coverHtml = cover('GVCN', 'Tổng hợp tình hình lớp', role.color, true);
-    mainHtml = await guarded('gvcn', renderGVCN);
   }
 
   app.innerHTML = coverHtml + mainHtml + tabbar();
@@ -748,6 +740,63 @@ async function renderAsync(){
 async function guarded(roleKey, renderFn){
   if(!state.unlocked[roleKey]) return `<main>${lockBody(ROLE_META[state.tab].label, ROLE_META[state.tab].color, roleKey)}</main>`;
   return await renderFn();
+}
+
+// ---------- LỚP TAB (Báo cáo / Danh sách / Phân công) ----------
+async function renderLop(){
+  const isGVCN = !!state.unlocked['gvcn'];
+  const sub = state.sub.lop || 'baocao';
+
+  // Subtab bar — viewer only sees Báo cáo; GVCN sees all 3
+  const tabs = isGVCN
+    ? [['baocao','Báo cáo'],['ds','Danh sách'],['phancong','Phân công']]
+    : [['baocao','Báo cáo']];
+  const subBar = subtabs('lop', tabs);
+
+  if(sub === 'baocao'){
+    const publicHtml = await renderPublic();
+    if(!isGVCN){
+      // Chỉ xem: chỉ hiện báo cáo công khai
+      return publicHtml.replace('<main>', `<main>${subBar}`);
+    }
+    // GVCN: hiện báo cáo công khai + dashboard GVCN phía dưới
+    const gvcnHtml = await renderGVCN();
+    // Ghép: lấy nội dung từ 2 main tags
+    const pubContent = publicHtml.replace(/^<main>/, '').replace(/<\/main>$/, '');
+    const gvcnContent = gvcnHtml.replace(/^<main>/, '').replace(/<\/main>$/, '');
+    return `<main>${subBar}${pubContent}<hr style="border:none;border-top:2px solid var(--border);margin:20px 0;">${gvcnContent}</main>`;
+  }
+
+  if(sub === 'ds'){
+    if(!isGVCN) return `<main>${subBar}<div class="lock-screen"><div class="lock-icon">🔒</div><h3>Chỉ GVCN</h3><p>Cần đăng nhập với tài khoản GVCN để chỉnh sửa danh sách.</p></div></main>`;
+    const homeHtml = await renderHome();
+    return homeHtml.replace('<main>', `<main>${subBar}`);
+  }
+
+  if(sub === 'phancong'){
+    if(!isGVCN) return `<main>${subBar}<div class="lock-screen"><div class="lock-icon">🔒</div><h3>Chỉ GVCN</h3><p>Cần đăng nhập với tài khoản GVCN để xem phân công.</p></div></main>`;
+    const assign = await sget('assignments') || {};
+    const rows = ASSIGNMENT_FIELDS.map(f=>`
+      <div class="card" style="margin-bottom:8px;">
+        <div class="week-name">${f.title}</div>
+        <div class="week-sub" style="margin-bottom:8px;">${f.desc}</div>
+        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách..." style="margin-top:0;">
+      </div>`).join('');
+    return `<main>
+      ${subBar}
+      <h2 class="section">Phân công ban cán sự</h2>
+      ${rows}
+      <button class="primary-btn" data-act="save-assignments">Lưu phân công</button>
+      <h2 class="section">Xuất dữ liệu</h2>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="primary-btn" data-act="csv-att" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất điểm danh hôm nay (.csv)</button>
+        <button class="primary-btn" data-act="csv-study" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất học tập hôm nay (.csv)</button>
+        <button class="primary-btn" data-act="csv-disc" style="background:var(--surf2);color:var(--text);border:1px solid var(--border);">📥 Xuất nền nếp tháng này (.csv)</button>
+      </div>
+    </main>`;
+  }
+
+  return `<main>${subBar}<p class="empty">Không tìm thấy trang.</p></main>`;
 }
 
 // ---------- PUBLIC VIEW ----------
@@ -844,44 +893,28 @@ async function renderPublic(){
 }
 
 async function renderHome(){
-  if(state.sub.home !== 'phancong'){
-    const rows = state.roster.map((s,i)=>`
-      <div class="roster-edit-row" data-id="${s.id}">
-        <span class="idx">${i+1}</span>
-        <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
-        <select class="select-to" data-id="${s.id}">
-          <option value="" ${!s.to?'selected':''}>Tổ?</option>
-          <option value="1" ${s.to===1?'selected':''}>Tổ 1</option>
-          <option value="2" ${s.to===2?'selected':''}>Tổ 2</option>
-          <option value="3" ${s.to===3?'selected':''}>Tổ 3</option>
-        </select>
-        <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
-      </div>`).join('');
-    return `<main>
-      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công']])}
-      <h2 class="section">Học sinh (${state.roster.length})</h2>
-      <div class="card">
-        ${rows || '<p class="empty">Chưa có học sinh nào.</p>'}
-        <button class="add-btn" data-act="add-student">+ Thêm học sinh</button>
-      </div>
-      <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
-      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Chọn Tổ để tổ trưởng chỉ thấy tổ mình.</p>
-    </main>`;
-  } else {
-    const assign = await sget('assignments') || {};
-    const rows = ASSIGNMENT_FIELDS.map(f=>`
-      <div class="card" style="margin-bottom:8px;">
-        <div class="week-name">${f.title}</div>
-        <div class="week-sub" style="margin-bottom:8px;">${f.desc}</div>
-        <input type="text" class="note-input assign-input" data-key="${f.key}" value="${escapeAttr(assign[f.key]||'')}" placeholder="Tên bạn phụ trách..." style="margin-top:0;">
-      </div>`).join('');
-    return `<main>
-      ${subtabs('home', [['ds','Danh sách'],['phancong','Phân công']])}
-      <h2 class="section">Phân công ban cán sự</h2>
-      ${rows}
-      <button class="primary-btn" data-act="save-assignments">Lưu phân công</button>
-    </main>`;
-  }
+  // Được gọi từ renderLop (subtab 'ds') — không tự thêm subtab bar
+  const rows = state.roster.map((s,i)=>`
+    <div class="roster-edit-row" data-id="${s.id}">
+      <span class="idx">${i+1}</span>
+      <input type="text" class="rname" value="${escapeAttr(s.name)}" placeholder="Họ và tên">
+      <select class="select-to" data-id="${s.id}">
+        <option value="" ${!s.to?'selected':''}>Tổ?</option>
+        <option value="1" ${s.to===1?'selected':''}>Tổ 1</option>
+        <option value="2" ${s.to===2?'selected':''}>Tổ 2</option>
+        <option value="3" ${s.to===3?'selected':''}>Tổ 3</option>
+      </select>
+      <button class="rm-btn" data-act="rm-student" data-id="${s.id}">✕</button>
+    </div>`).join('');
+  return `<main>
+    <h2 class="section">Học sinh (${state.roster.length})</h2>
+    <div class="card">
+      ${rows || '<p class="empty">Chưa có học sinh nào.</p>'}
+      <button class="add-btn" data-act="add-student">+ Thêm học sinh</button>
+    </div>
+    <button class="primary-btn" data-act="save-roster">Lưu danh sách</button>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Chọn Tổ để tổ trưởng chỉ thấy tổ mình.</p>
+  </main>`;
 }
 
 let ltLoadedDate = null;
