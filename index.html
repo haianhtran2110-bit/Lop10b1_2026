@@ -501,7 +501,12 @@ function lsSet(key, value){
 
 // ── Background revalidation (stale-while-revalidate) ──
 const _bgPending = new Set();
+const _recentWrites = {}; // key → timestamp, tránh overwrite data vừa lưu
+const WRITE_GUARD_MS = 20000; // 20 giây sau khi sset thì mới cho revalidate
+
 function bgRevalidate(key){
+  // Nếu key này vừa được ghi gần đây (GAS chưa kịp đồng bộ), bỏ qua
+  if(_recentWrites[key] && Date.now() - _recentWrites[key] < WRITE_GUARD_MS) return;
   if(_bgPending.has(key)) return;
   _bgPending.add(key);
   (async ()=>{
@@ -594,6 +599,7 @@ async function sgetMany(keys){
 }
 async function sset(key, value){
   _cache[key] = value;
+  _recentWrites[key] = Date.now(); // đánh dấu key này vừa được ghi
   lsSet(key, value); // lưu ngay vào localStorage
   try{
     const url = `${API_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(JSON.stringify(value))}&token=${encodeURIComponent(API_TOKEN)}`;
@@ -1781,11 +1787,15 @@ function attachHandlers(){
   if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
   const refreshBtn = app.querySelector('[data-act="force-refresh"]');
   if(refreshBtn) refreshBtn.onclick = ()=>{
-    // Xoá cache in-memory + localStorage cho dữ liệu ngày hiện tại
+    // Chỉ xoá localStorage (không xoá _cache — để dữ liệu vừa lưu không bị mất)
+    // Key nào KHÔNG vừa được ghi thì mới xoá _cache để force fetch từ GAS
     const d = state.date, m = state.month;
     ['attendance:'+d,'study:'+d,'duty:'+d,'discipline:log:'+m].forEach(k=>{
-      delete _cache[k];
       try{ localStorage.removeItem(LS_PFX+k); } catch(e){}
+      // Chỉ xoá in-memory cache nếu key không vừa được ghi gần đây
+      if(!_recentWrites[k] || Date.now() - _recentWrites[k] >= WRITE_GUARD_MS){
+        delete _cache[k];
+      }
     });
     ltLoadedDate = null; htLoadedDate = null; ldLoadedDate = null;
     showToast('Đang làm mới…');
