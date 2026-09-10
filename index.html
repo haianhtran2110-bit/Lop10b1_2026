@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<!-- v2.2 cache-bust 2026-09-10 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Lớp 10B1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -472,20 +476,47 @@ const API_TOKEN = 'Lop10b1@2026';
 
 const _cache = {};
 
-// ── localStorage (stale-while-revalidate, TTL 10 phút) ──
+// ── localStorage (stale-while-revalidate) ──
 const LS_PFX = 'lop10b1:';
-const LS_TTL = 10 * 60 * 1000;
+// Dữ liệu tĩnh (roster, assignments): cache 1 giờ
+// Dữ liệu ngày (attendance, study, duty, discipline): cache 90 giây
+const LS_TTL_STATIC = 60 * 60 * 1000;
+const LS_TTL_DAILY  =  90 * 1000;
+function isDynamicKey(key){
+  return /^(attendance|study|duty|discipline):/.test(key);
+}
 function lsGet(key){
   try{
     const raw = localStorage.getItem(LS_PFX + key);
     if(!raw) return undefined;
     const {v, t} = JSON.parse(raw);
-    if(Date.now() - t > LS_TTL) return undefined;
+    const ttl = isDynamicKey(key) ? LS_TTL_DAILY : LS_TTL_STATIC;
+    if(Date.now() - t > ttl) return undefined;
     return v;
   } catch(e){ return undefined; }
 }
 function lsSet(key, value){
   try{ localStorage.setItem(LS_PFX + key, JSON.stringify({v:value, t:Date.now()})); } catch(e){}
+}
+
+// ── Background revalidation (stale-while-revalidate) ──
+const _bgPending = new Set();
+function bgRevalidate(key){
+  if(_bgPending.has(key)) return;
+  _bgPending.add(key);
+  (async ()=>{
+    try{
+      const url = `${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if(data.error) return;
+      const val = data.value ? JSON.parse(data.value) : null;
+      const changed = JSON.stringify(val) !== JSON.stringify(_cache[key]);
+      _cache[key] = val;
+      lsSet(key, val);
+      if(changed && !state.showLogin && !state.loading) render();
+    } catch(e){} finally{ _bgPending.delete(key); }
+  })();
 }
 
 // ── Session persistence (7 ngày) ──
@@ -511,10 +542,19 @@ function sessionClear(){
 }
 
 async function sget(key){
-  if(key in _cache) return _cache[key];
+  if(key in _cache){
+    // Nếu là dữ liệu động, revalidate ngầm để cập nhật sau
+    if(isDynamicKey(key)) bgRevalidate(key);
+    return _cache[key];
+  }
   // Kiểm tra localStorage trước (tức thì, không cần network)
   const ls = lsGet(key);
-  if(ls !== undefined){ _cache[key] = ls; return ls; }
+  if(ls !== undefined){
+    _cache[key] = ls;
+    // Revalidate ngầm: fetch từ GAS, re-render nếu thay đổi
+    if(isDynamicKey(key)) bgRevalidate(key);
+    return ls;
+  }
   try{
     const url = `${API_URL}?action=get&key=${encodeURIComponent(key)}&token=${encodeURIComponent(API_TOKEN)}`;
     const res = await fetch(url);
@@ -605,6 +645,19 @@ async function init(){
   // Hiện login screen NGAY — không chờ GAS nữa
   state.loading = false;
   render();
+
+  // Auto-refresh khi user quay lại tab (visibility change)
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible' && !state.showLogin && !state.loading){
+      const today = state.date;
+      // Xoá cache in-memory cho dữ liệu ngày hiện tại để force re-fetch
+      ['attendance:'+today,'study:'+today,'duty:'+today,'discipline:log:'+state.month].forEach(k=>{
+        delete _cache[k];
+      });
+      ltLoadedDate = null; htLoadedDate = null; ldLoadedDate = null;
+      render();
+    }
+  });
 
   // Prefetch song song: roster + data hôm nay (1 batch duy nhất)
   const today = state.date;
@@ -955,6 +1008,7 @@ function cover(title, sub, color, showDate){
     <div class="datebar">
       <input type="date" id="dateInput" value="${state.date}">
       <button class="today-btn" data-act="today">Hôm nay</button>
+      <button class="today-btn" data-act="force-refresh" title="Làm mới dữ liệu" style="padding:7px 10px;">🔄</button>
     </div>` : '';
   return `<div class="cover" style="--role-color:${color}">
     <div class="cover-blob"></div>
@@ -1725,6 +1779,18 @@ function attachHandlers(){
   if(dateInput) dateInput.onchange = ()=>{ state.date = dateInput.value; discPending=[]; discWizard={open:false,step:1,type:null,cats:new Set(),studs:new Set(),pairs:[]}; renderAsync(); };
   const todayBtn = app.querySelector('[data-act="today"]');
   if(todayBtn) todayBtn.onclick = ()=>{ state.date = todayStr(); renderAsync(); };
+  const refreshBtn = app.querySelector('[data-act="force-refresh"]');
+  if(refreshBtn) refreshBtn.onclick = ()=>{
+    // Xoá cache in-memory + localStorage cho dữ liệu ngày hiện tại
+    const d = state.date, m = state.month;
+    ['attendance:'+d,'study:'+d,'duty:'+d,'discipline:log:'+m].forEach(k=>{
+      delete _cache[k];
+      try{ localStorage.removeItem(LS_PFX+k); } catch(e){}
+    });
+    ltLoadedDate = null; htLoadedDate = null; ldLoadedDate = null;
+    showToast('Đang làm mới…');
+    renderAsync();
+  };
   // (no theme toggle)
   const monthInput = document.getElementById('monthInput');
   if(monthInput) monthInput.onchange = ()=>{ state.month = monthInput.value; renderAsync(); };
