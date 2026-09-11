@@ -1161,11 +1161,15 @@ async function renderPublic(){
     if(p==='khongphep') return ` <span style="font-size:10px;background:rgba(184,85,85,.12);color:var(--bad);border-radius:6px;padding:2px 7px;font-weight:700;">Không phép</span>`;
     return '';
   };
+  const twoColGrid = (students) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-top:6px;">
+      ${students.map(s=>`<div style="font-size:13px;display:flex;align-items:center;gap:5px;padding:3px 0;">${escapeHtml(s.name)}${permLabel(s)}</div>`).join('')}
+    </div>`;
   const attHtml = `
     <div class="card">
       <div class="row"><span class="name" style="color:var(--ok);">✅ Đúng giờ</span><span style="font-weight:700;">${present.length} bạn</span></div>
-      ${late.length?`<div class="row"><span class="name" style="color:var(--warn);">⏰ Muộn</span><span style="font-size:13px;color:var(--muted);">${late.map(s=>escapeHtml(s.name)+permLabel(s)).join(', ')}</span></div>`:''}
-      ${absent.length?`<div class="row"><span class="name" style="color:var(--bad);">🚫 Vắng</span><span style="font-size:13px;color:var(--muted);">${absent.map(s=>escapeHtml(s.name)+permLabel(s)).join(', ')}</span></div>`:''}
+      ${late.length?`<div style="padding:10px 0;border-top:1px solid var(--border);"><span style="color:var(--warn);font-weight:600;">⏰ Muộn · ${late.length} bạn</span>${twoColGrid(late)}</div>`:''}
+      ${absent.length?`<div style="padding:10px 0;border-top:1px solid var(--border);"><span style="color:var(--bad);font-weight:600;">🚫 Vắng · ${absent.length} bạn</span>${twoColGrid(absent)}</div>`:''}
       ${!late.length&&!absent.length?'<p class="empty" style="padding:8px 0;">Cả lớp đi đúng giờ hôm nay 🎉</p>':''}
     </div>`;
 
@@ -1215,8 +1219,6 @@ async function renderPublic(){
     ${attHtml}
     <h2 class="section">Học tập đầu giờ</h2>
     ${studyHtml}
-    <h2 class="section">Trực nhật hôm nay</h2>
-    ${dutyHtml}
     <h2 class="section">Ranking nền nếp <input type="month" id="monthInput" value="${state.month}" style="font-family:inherit;font-size:11px;border:1px solid var(--border);border-radius:8px;padding:3px 7px;background:var(--surf2);color:var(--text);margin-left:6px;letter-spacing:0;"></h2>
     <div class="card">${rankHtml}</div>
     <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:16px;">👀 Chỉ xem · không thể chỉnh sửa</p>
