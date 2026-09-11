@@ -810,11 +810,21 @@ function renderLoginScreen(){
         </button>
         <button id="btnIsViewer" style="padding:16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.10);background:#F6F8FF;font-family:inherit;font-size:14px;font-weight:600;color:#3A4A80;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
           <span style="font-size:22px;width:40px;height:40px;background:rgba(16,72,200,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👁️</span>
-          <span>Xem điểm danh &amp; nền nếp<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Báo cáo lớp, không cần đăng nhập</span></span>
+          <span>Tôi muốn xem tự do<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Không cần đăng nhập</span></span>
         </button>
-        <button id="btnIsParent" style="padding:16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.10);background:#F6F8FF;font-family:inherit;font-size:14px;font-weight:600;color:#3A4A80;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:22px;width:40px;height:40px;background:rgba(16,72,200,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📊</span>
-          <span>Xem điểm học tập<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Phụ huynh tra cứu điểm theo mã số</span></span>
+      </div>`;
+  } else if(loginStep === 'pick-viewer-type'){
+    body = `
+      <button id="btnBack" style="align-self:flex-start;background:#EEF3FF;border:1px solid rgba(16,72,200,0.15);border-radius:10px;padding:6px 14px;font-family:inherit;font-size:12px;font-weight:600;color:#3A4A80;cursor:pointer;margin-bottom:4px;">← Quay lại</button>
+      <p style="font-size:12px;color:#7A8AB8;margin:0 0 8px;align-self:flex-start;">Bạn muốn xem gì?</p>
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+        <button id="btnViewReport" style="padding:18px 16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.15);background:#EEF3FF;font-family:inherit;font-size:14px;font-weight:700;color:#0D1A40;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:24px;width:44px;height:44px;background:rgba(16,72,200,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📋</span>
+          <span>Điểm danh &amp; Nền nếp<br><span style="font-size:11px;font-weight:400;color:#7A8AB8;">Báo cáo lớp hôm nay, ranking tháng</span></span>
+        </button>
+        <button id="btnViewScores" style="padding:18px 16px;border-radius:16px;border:1.5px solid rgba(16,72,200,0.10);background:#F6F8FF;font-family:inherit;font-size:14px;font-weight:600;color:#3A4A80;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:24px;width:44px;height:44px;background:rgba(16,72,200,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📊</span>
+          <span>Điểm học tập<br><span style="font-size:11px;font-weight:400;color:#A0AABF;">Tra cứu điểm theo mã số cá nhân</span></span>
         </button>
       </div>`;
   } else if(loginStep === 'pick-role'){
@@ -912,6 +922,7 @@ function renderLoginScreen(){
 
   const tagline = {
     'pick-type':'Bạn vào đây với tư cách gì?',
+    'pick-viewer-type':'Chọn nội dung muốn xem',
     'pick-role':'Chọn vai trò của bạn',
     'enter-pass':'Nhập mật khẩu để tiếp tục',
     'enter-student-code':'Tra cứu điểm học tập',
@@ -933,9 +944,12 @@ function renderLoginScreen(){
   const btnBCS = document.getElementById('btnIsBCS');
   if(btnBCS) btnBCS.onclick = ()=>{ loginStep='pick-role'; renderLoginScreen(); };
   const btnViewer = document.getElementById('btnIsViewer');
-  if(btnViewer) btnViewer.onclick = ()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; sessionSave(); render(); };
-  const btnParent = document.getElementById('btnIsParent');
-  if(btnParent) btnParent.onclick = ()=>{ loginStep='enter-student-code'; renderLoginScreen(); setTimeout(()=>{ const el=document.getElementById('studentCodeInput'); if(el) el.focus(); },50); };
+  if(btnViewer) btnViewer.onclick = ()=>{ loginStep='pick-viewer-type'; renderLoginScreen(); };
+  // pick-viewer-type handlers
+  const btnViewReport = document.getElementById('btnViewReport');
+  if(btnViewReport) btnViewReport.onclick = ()=>{ state.showLogin=false; state.isViewer=true; state.tab='public'; sessionSave(); render(); };
+  const btnViewScores = document.getElementById('btnViewScores');
+  if(btnViewScores) btnViewScores.onclick = ()=>{ loginStep='enter-student-code'; renderLoginScreen(); setTimeout(()=>{ const el=document.getElementById('studentCodeInput'); if(el) el.focus(); },50); };
 
   // Step 2 handlers
   app.querySelectorAll('[data-login-role]').forEach(btn=>{
@@ -951,6 +965,8 @@ function renderLoginScreen(){
   const btnBack = document.getElementById('btnBack');
   if(btnBack) btnBack.onclick = ()=>{
     if(loginStep==='enter-pass'){ loginStep='pick-role'; state.loginSelectedRole=null; }
+    else if(loginStep==='pick-role'||loginStep==='pick-viewer-type') { loginStep='pick-type'; }
+    else if(loginStep==='enter-student-code') { loginStep='pick-viewer-type'; scoreData=null; }
     else { loginStep='pick-type'; scoreData=null; }
     renderLoginScreen();
   };
@@ -1026,9 +1042,21 @@ function cover(title, sub, color, showDate){
 }
 
 function tabbar(){
-  const entries = state.isViewer
-    ? Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k))
-    : Object.entries(ROLE_META).filter(([k])=>k!=='public' && k!=='home');
+  let entries;
+  if(state.isViewer){
+    entries = Object.entries(ROLE_META).filter(([k])=>PUBLIC_TABS.includes(k));
+  } else {
+    const isGVCN = state.unlocked['gvcn'];
+    entries = Object.entries(ROLE_META).filter(([k])=>{
+      if(k==='public'||k==='home') return false;
+      if(isGVCN) return true; // GVCN thấy tất cả tab
+      if(k==='lt')      return !!state.unlocked['lop-truong'];
+      if(k==='hoctap')  return !!state.unlocked['hoc-tap'];
+      if(k==='laodong') return !!state.unlocked['lao-dong'];
+      if(k==='kyluat')  return !!(state.unlocked['to-1']||state.unlocked['to-2']||state.unlocked['to-3']);
+      return false;
+    });
+  }
   const loginBtn = state.isViewer
     ? `<button data-act="go-login" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🔑</span>Đăng nhập</button>`
     : `<button data-act="logout" title="Đăng xuất" style="flex:none;padding:10px 12px;border:none;background:none;font-family:inherit;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.03em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🚪</span>Thoát</button>`;
