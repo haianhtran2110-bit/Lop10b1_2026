@@ -711,21 +711,24 @@ const LOGIN_ROLES = [
 ];
 // ===== ĐIỂM HỌC TẬP — Google Sheet lookup =====
 const SCORE_SHEET_ID = '1jtZf84_cylfWnvuEHH6XgMAP_iZt1bZiL9xXGBRGzbA';
-// Sheet "DanhSach": A=STT, B=Tên, C=Ngày sinh(date), D=Mã tra cứu(6 số)
-// Sheet môn có điểm: A=STT, B=Tên, C=TX1(number), D=TX2... J=CK
-// Sheet môn có nhận xét: A=STT, B=Tên, C=Ngày sinh(date), D=Mã, E+=Nhận xét tháng X
+// Sheet "Diem": cột 0=STT, 1=Tên, 2=Ngày sinh, 3=Mã tra cứu
+// Sau đó mỗi môn có 8 cột: TX1 TX2 TX3 TX4 TX5 TX6 Giữa kỳ Cuối kỳ
+// Thứ tự môn: Toán(4), Ngữ văn(12), Anh Cơ bản(20), Anh IEG(28), Vật lý(36), Địa lý(44), Lịch sử(52)
 const SCORE_SUBJECTS = [
-  {name:'Toán',       icon:'📐'},
-  {name:'Ngữ Văn',   icon:'📖'},
-  {name:'Anh Cơ Bản',icon:'🌐'},
-  {name:'Vật lý',    icon:'⚡'},
-  {name:'Địa lý',    icon:'🌏'},
-  {name:'Lịch sử',   icon:'📜'},
+  {name:'Toán',       icon:'📐', col:4 },
+  {name:'Ngữ Văn',   icon:'📖', col:12},
+  {name:'Anh Cơ Bản',icon:'🌐', col:20},
+  {name:'Vật lý',    icon:'⚡',  col:36},
+  {name:'Địa lý',    icon:'🌏', col:44},
+  {name:'Lịch sử',   icon:'📜', col:52},
 ];
 
-// Fetch 1 sheet: trả về {cols:[{label,type}], rows:[[]]}
-async function fetchSheet(sheetName){
-  const url = `https://docs.google.com/spreadsheets/d/${SCORE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+let _diemSheetCache = null; // cache sheet Diem cho phiên
+
+// Fetch sheet Diem (dùng chung cho lookup và điểm)
+async function fetchDiemSheet(){
+  if(_diemSheetCache) return _diemSheetCache;
+  const url = `https://docs.google.com/spreadsheets/d/${SCORE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=Diem`;
   try {
     const res = await fetch(url);
     const text = await res.text();
@@ -735,20 +738,20 @@ async function fetchSheet(sheetName){
     const rows = (json.table.rows||[]).map(r => r.c.map((c,ci) => {
       if(!c || c.v === null || c.v === undefined) return '';
       if(cols[ci] && cols[ci].type === 'date'){
-        // date: prefer formatted string
         if(c.f) return c.f;
         const m = String(c.v).match(/Date\((\d+),(\d+),(\d+)\)/);
         if(m) return `${String(m[3]).padStart(2,'0')}/${String(Number(m[2])+1).padStart(2,'0')}/${m[1]}`;
       }
-      return String(c.f || c.v);
+      return String(c.f !== undefined && c.f !== null ? c.f : c.v);
     }));
-    return { cols, rows };
+    _diemSheetCache = { cols, rows };
+    return _diemSheetCache;
   } catch(e){ return null; }
 }
 
-// Tra cứu học sinh theo Mã tra cứu (col D = index 3 trong DanhSach)
+// Tra cứu học sinh theo Mã tra cứu (col index 3)
 async function lookupStudentByCode(code){
-  const data = await fetchSheet('DanhSach');
+  const data = await fetchDiemSheet();
   if(!data) return null;
   const nc = code.replace(/\s/g,'');
   const row = data.rows.find(r => String(r[3]).replace(/\s/g,'') === nc);
@@ -756,41 +759,27 @@ async function lookupStudentByCode(code){
   return { stt: row[0], name: row[1], dob: row[2], ma: row[3] };
 }
 
-// Fetch điểm + nhận xét tất cả môn
-// Sheet điểm: col[2].type === 'number' → là điểm số, lookup by STT
-// Sheet nhận xét: col[2].type === 'date' → là DanhSach-style, lookup by Mã (col[3])
+// Lấy điểm tất cả môn từ sheet Diem (1 hàng duy nhất theo Mã)
 async function fetchAllStudentData(stt, ma){
-  const results = await Promise.all(SCORE_SUBJECTS.map(s => fetchSheet(s.name)));
-  const scores = [], nhanXet = [];
-  SCORE_SUBJECTS.forEach((subj, i) => {
-    // Always push a score row for this subject, even if no data found
-    const data = results[i];
-    if(!data || !data.cols.length){
+  const data = await fetchDiemSheet();
+  const scores = [];
+  const nc = String(ma).replace(/\s/g,'');
+  const row = data ? data.rows.find(r => String(r[3]).replace(/\s/g,'') === nc) : null;
+  const fmt = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+  SCORE_SUBJECTS.forEach(subj => {
+    if(!row){
       scores.push({ subject:subj.name, icon:subj.icon, tx:[], gk:null, ck:null });
       return;
     }
-    const isScoreSheet = data.cols[2] && data.cols[2].type === 'number';
-    if(isScoreSheet){
-      // Sheet điểm: tìm theo STT
-      const row = data.rows.find(r => String(r[0]).trim() === String(stt).trim());
-      if(!row){
-        scores.push({ subject:subj.name, icon:subj.icon, tx:[], gk:null, ck:null });
-        return;
-      }
-      const txVals = [row[2],row[3],row[4],row[5],row[6],row[7]].filter(v=>v!==''&&v!==null&&v!==undefined);
-      scores.push({ subject:subj.name, icon:subj.icon, tx:txVals, gk:row[8]||null, ck:row[9]||null });
-    } else {
-      // Sheet nhận xét: tìm theo Mã (col[3])
-      const row = data.rows.find(r => String(r[3]).replace(/\s/g,'') === String(ma).replace(/\s/g,''));
-      if(row){
-        for(let j=4; j<data.cols.length; j++){
-          if(data.cols[j] && data.cols[j].label && row[j] && row[j].trim())
-            nhanXet.push({ subject:subj.name, icon:subj.icon, label:data.cols[j].label, nd:row[j] });
-        }
-      }
-    }
+    const c = subj.col;
+    // 6 ô TX, rồi Giữa kỳ, Cuối kỳ
+    const tx = [row[c],row[c+1],row[c+2],row[c+3],row[c+4],row[c+5]]
+      .map(fmt).filter(v => v !== null);
+    const gk = fmt(row[c+6]);
+    const ck = fmt(row[c+7]);
+    scores.push({ subject:subj.name, icon:subj.icon, tx, gk, ck });
   });
-  return { scores, nhanXet };
+  return { scores, nhanXet:[] };
 }
 
 // loginStep: 'pick-type' | 'pick-role' | 'enter-pass' | 'enter-student-code' | 'show-scores'
@@ -866,14 +855,14 @@ function renderLoginScreen(){
       // Tìm số cột TX tối đa
       const maxTx = Math.max(...(d.scores.map(s=>s.tx.length)), 1);
       const txHeaders = Array.from({length:maxTx},(_,i)=>`<th>TX${i+1}</th>`).join('');
-      const fmt = v => { const n=parseFloat(v); return isNaN(n)?'':n%1===0?String(n):n.toFixed(1); };
+      const fmt = v => { if(v===null||v===undefined||v==='') return ''; const n=parseFloat(v); return isNaN(n)?'':n%1===0?String(n):n.toFixed(1); };
       const scoreRows = d.scores.map(s => {
-        const txCells = Array.from({length:maxTx},(_,i)=>`<td>${s.tx[i]!==undefined?fmt(s.tx[i]):''}</td>`).join('');
+        const txCells = Array.from({length:maxTx},(_,i)=>`<td>${s.tx[i]!==undefined&&s.tx[i]!==null?fmt(s.tx[i]):''}</td>`).join('');
         return `<tr>
           <td style="text-align:left;padding:8px 10px;font-weight:600;">${s.icon} ${s.subject}</td>
           ${txCells}
-          <td>${s.gk?fmt(s.gk):''}</td>
-          <td>${s.ck?fmt(s.ck):''}</td>
+          <td>${fmt(s.gk)}</td>
+          <td>${fmt(s.ck)}</td>
         </tr>`;
       }).join('');
       // (Nhận xét GVCN đã bị ẩn theo yêu cầu)
