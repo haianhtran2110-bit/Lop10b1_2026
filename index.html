@@ -712,18 +712,23 @@ const LOGIN_ROLES = [
 // ===== ĐIỂM HỌC TẬP — Google Sheet lookup =====
 const SCORE_SHEET_ID = '1jtZf84_cylfWnvuEHH6XgMAP_iZt1bZiL9xXGBRGzbA';
 // Sheet "Diem": cột 0=STT, 1=Tên, 2=Ngày sinh, 3=Mã tra cứu
-// Sau đó mỗi môn có 8 cột: TX1 TX2 TX3 TX4 TX5 TX6 Giữa kỳ Cuối kỳ
-// Thứ tự môn: Toán(4), Ngữ văn(12), Anh Cơ bản(20), Anh IEG(28), Vật lý(36), Địa lý(44), Lịch sử(52)
-const SCORE_SUBJECTS = [
-  {name:'Toán',       icon:'📐', col:4 },
-  {name:'Ngữ Văn',   icon:'📖', col:12},
-  {name:'Anh Cơ Bản',icon:'🌐', col:20},
-  {name:'Vật lý',    icon:'⚡',  col:36},
-  {name:'Địa lý',    icon:'🌏', col:44},
-  {name:'Lịch sử',   icon:'📜', col:52},
+// Mỗi môn có 8 cột liên tiếp: TX1 TX2 TX3 TX4 TX5 TX6 Giữa kỳ Cuối kỳ
+// Môn được detect tự động từ header (label kết thúc bằng " TX1")
+
+// Icon mặc định theo từ khóa trong tên môn
+const SUBJECT_ICON_MAP = [
+  [/toán/i,'📐'],[/văn/i,'📖'],[/anh.*ieg/i,'🌍'],[/anh/i,'🌐'],
+  [/lý|vật/i,'⚡'],[/địa/i,'🌏'],[/sử|lịch/i,'📜'],[/hóa/i,'🧪'],
+  [/sinh/i,'🌿'],[/kinh.*tế|pháp/i,'⚖️'],[/tin/i,'💻'],[/công.*nghệ/i,'🔧'],
+  [/thể/i,'🏃'],[/gdcd|công.*dân/i,'🏛️'],
 ];
+function subjectIcon(name){
+  for(const [re,icon] of SUBJECT_ICON_MAP) if(re.test(name)) return icon;
+  return '📚';
+}
 
 let _diemSheetCache = null; // cache sheet Diem cho phiên
+let _detectedSubjects = null; // [{name, icon, col}] tự detect từ header
 
 // Fetch sheet Diem (dùng chung cho lookup và điểm)
 async function fetchDiemSheet(){
@@ -745,6 +750,13 @@ async function fetchDiemSheet(){
       return String(c.f !== undefined && c.f !== null ? c.f : c.v);
     }));
     _diemSheetCache = { cols, rows };
+    // Tự detect môn: tìm cột có label kết thúc " TX1" (từ cột 4 trở đi)
+    _detectedSubjects = [];
+    cols.forEach((col, i) => {
+      if(i < 4) return;
+      const m = col.label.match(/^(.+?)\s+TX1$/i);
+      if(m) _detectedSubjects.push({ name: m[1].trim(), icon: subjectIcon(m[1]), col: i });
+    });
     return _diemSheetCache;
   } catch(e){ return null; }
 }
@@ -763,10 +775,11 @@ async function lookupStudentByCode(code){
 async function fetchAllStudentData(stt, ma){
   const data = await fetchDiemSheet();
   const scores = [];
+  const subjects = _detectedSubjects && _detectedSubjects.length ? _detectedSubjects : [];
   const nc = String(ma).replace(/\s/g,'');
   const row = data ? data.rows.find(r => String(r[3]).replace(/\s/g,'') === nc) : null;
   const fmt = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
-  SCORE_SUBJECTS.forEach(subj => {
+  subjects.forEach(subj => {
     if(!row){
       scores.push({ subject:subj.name, icon:subj.icon, tx:[], gk:null, ck:null });
       return;
