@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<!-- v2.2 cache-bust 2026-09-10 -->
+<!-- v2.3 cache-bust 2026-09-11 -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -712,23 +712,18 @@ const LOGIN_ROLES = [
 // ===== ĐIỂM HỌC TẬP — Google Sheet lookup =====
 const SCORE_SHEET_ID = '1jtZf84_cylfWnvuEHH6XgMAP_iZt1bZiL9xXGBRGzbA';
 // Sheet "Diem": cột 0=STT, 1=Tên, 2=Ngày sinh, 3=Mã tra cứu
-// Mỗi môn có 8 cột liên tiếp: TX1 TX2 TX3 TX4 TX5 TX6 Giữa kỳ Cuối kỳ
-// Môn được detect tự động từ header (label kết thúc bằng " TX1")
-
-// Icon mặc định theo từ khóa trong tên môn
-const SUBJECT_ICON_MAP = [
-  [/toán/i,'📐'],[/văn/i,'📖'],[/anh.*ieg/i,'🌍'],[/anh/i,'🌐'],
-  [/lý|vật/i,'⚡'],[/địa/i,'🌏'],[/sử|lịch/i,'📜'],[/hóa/i,'🧪'],
-  [/sinh/i,'🌿'],[/kinh.*tế|pháp/i,'⚖️'],[/tin/i,'💻'],[/công.*nghệ/i,'🔧'],
-  [/thể/i,'🏃'],[/gdcd|công.*dân/i,'🏛️'],
+// Sau đó mỗi môn có 8 cột: TX1 TX2 TX3 TX4 TX5 TX6 Giữa kỳ Cuối kỳ
+// Thứ tự môn: Toán(4), Ngữ văn(12), Anh Cơ bản(20), Anh IEG(28), Vật lý(36), Địa lý(44), Lịch sử(52)
+const SCORE_SUBJECTS = [
+  {name:'Toán',       icon:'📐', col:4 },
+  {name:'Ngữ Văn',   icon:'📖', col:12},
+  {name:'Anh Cơ Bản',icon:'🌐', col:20},
+  {name:'Vật lý',    icon:'⚡',  col:36},
+  {name:'Địa lý',    icon:'🌏', col:44},
+  {name:'Lịch sử',   icon:'📜', col:52},
 ];
-function subjectIcon(name){
-  for(const [re,icon] of SUBJECT_ICON_MAP) if(re.test(name)) return icon;
-  return '📚';
-}
 
 let _diemSheetCache = null; // cache sheet Diem cho phiên
-let _detectedSubjects = null; // [{name, icon, col}] tự detect từ header
 
 // Fetch sheet Diem (dùng chung cho lookup và điểm)
 async function fetchDiemSheet(){
@@ -738,7 +733,7 @@ async function fetchDiemSheet(){
     const res = await fetch(url);
     const text = await res.text();
     const json = JSON.parse(text.replace(/^[^{]+/, '').replace(/\);?\s*$/, ''));
-    if(!json.table) return null;
+    if(!json.table){ console.warn('[Diem] gviz: no table'); return null; }
     const cols = json.table.cols.map(c => ({ label: c.label||'', type: c.type||'string' }));
     const rows = (json.table.rows||[]).map(r => r.c.map((c,ci) => {
       if(!c || c.v === null || c.v === undefined) return '';
@@ -747,18 +742,18 @@ async function fetchDiemSheet(){
         const m = String(c.v).match(/Date\((\d+),(\d+),(\d+)\)/);
         if(m) return `${String(m[3]).padStart(2,'0')}/${String(Number(m[2])+1).padStart(2,'0')}/${m[1]}`;
       }
-      return String(c.f !== undefined && c.f !== null ? c.f : c.v);
+      // Ưu tiên c.f nếu là số hợp lệ (tránh đọc date-serial thay vì điểm thật)
+      if(c.f !== undefined && c.f !== null && c.f !== ''){
+        const fStr = String(c.f).replace(',','.');
+        if(!isNaN(parseFloat(fStr)) && isFinite(Number(fStr))) return fStr;
+        if(cols[ci] && cols[ci].type !== 'number') return String(c.f);
+      }
+      return String(c.v);
     }));
+    console.log('[Diem] fetched', rows.length, 'rows,', cols.length, 'cols');
     _diemSheetCache = { cols, rows };
-    // Tự detect môn: tìm cột có label kết thúc " TX1" (từ cột 4 trở đi)
-    _detectedSubjects = [];
-    cols.forEach((col, i) => {
-      if(i < 4) return;
-      const m = col.label.match(/^(.+?)\s+TX1$/i);
-      if(m) _detectedSubjects.push({ name: m[1].trim(), icon: subjectIcon(m[1]), col: i });
-    });
     return _diemSheetCache;
-  } catch(e){ return null; }
+  } catch(e){ console.error('[Diem] fetch error:', e); return null; }
 }
 
 // Tra cứu học sinh theo Mã tra cứu (col index 3)
@@ -775,11 +770,10 @@ async function lookupStudentByCode(code){
 async function fetchAllStudentData(stt, ma){
   const data = await fetchDiemSheet();
   const scores = [];
-  const subjects = _detectedSubjects && _detectedSubjects.length ? _detectedSubjects : [];
   const nc = String(ma).replace(/\s/g,'');
   const row = data ? data.rows.find(r => String(r[3]).replace(/\s/g,'') === nc) : null;
   const fmt = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
-  subjects.forEach(subj => {
+  SCORE_SUBJECTS.forEach(subj => {
     if(!row){
       scores.push({ subject:subj.name, icon:subj.icon, tx:[], gk:null, ck:null });
       return;
@@ -869,9 +863,11 @@ function renderLoginScreen(){
       const maxTx = Math.max(...(d.scores.map(s=>s.tx.length)), 1);
       const txHeaders = Array.from({length:maxTx},(_,i)=>`<th>TX${i+1}</th>`).join('');
       const fmt = v => { if(v===null||v===undefined||v==='') return ''; const n=parseFloat(v); return isNaN(n)?'':n%1===0?String(n):n.toFixed(1); };
+      const hasAnyScore = d.scores.some(s => s.tx.length > 0 || s.gk !== null || s.ck !== null);
       const scoreRows = d.scores.map(s => {
+        const hasRow = s.tx.length > 0 || s.gk !== null || s.ck !== null;
         const txCells = Array.from({length:maxTx},(_,i)=>`<td>${s.tx[i]!==undefined&&s.tx[i]!==null?fmt(s.tx[i]):''}</td>`).join('');
-        return `<tr>
+        return `<tr${!hasRow?' style="opacity:0.45;"':''}>
           <td style="text-align:left;padding:8px 10px;font-weight:600;">${s.icon} ${s.subject}</td>
           ${txCells}
           <td>${fmt(s.gk)}</td>
@@ -906,7 +902,8 @@ function renderLoginScreen(){
           </div>
         </div>
         <div style="width:100%;overflow-x:auto;border-radius:10px;border:1px solid #dce8ff;">
-          <table class="score-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:340px;">
+          ${!hasAnyScore ? `<div style="text-align:center;padding:20px 16px;color:#7A8AB8;font-size:13px;background:#F6F9FF;border-radius:10px;margin-bottom:8px;">📋 Điểm chưa được cập nhật cho học sinh này.<br><span style="font-size:11px;color:#A0AABF;">Vui lòng liên hệ GV bộ môn hoặc LP Học tập.</span></div>` : ''}
+          <table class="score-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:340px;${!hasAnyScore?'opacity:0.5;':''}">
             <thead>
               <tr style="background:#1048C8;color:#fff;">
                 <th style="padding:9px 10px;text-align:left;font-weight:700;min-width:110px;">Môn học</th>
@@ -915,7 +912,7 @@ function renderLoginScreen(){
               </tr>
             </thead>
             <tbody>
-              ${scoreRows || '<tr><td colspan="9" style="text-align:center;padding:20px;color:#A0AABF;">Chưa có dữ liệu điểm</td></tr>'}
+              ${scoreRows}
             </tbody>
           </table>
         </div>
@@ -984,10 +981,16 @@ function renderLoginScreen(){
     }
     codeSubmit.disabled=true; codeSubmit.textContent='⏳ Đang tra cứu…';
     errEl.textContent='';
+    // Kiểm tra fetch được sheet không
+    const sheetData = await fetchDiemSheet();
+    if(!sheetData){
+      codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
+      errEl.textContent='⚠️ Không kết nối được bảng điểm. Kiểm tra kết nối mạng hoặc liên hệ GVCN.'; return;
+    }
     const student = await lookupStudentByCode(code);
     if(!student){
       codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
-      errEl.textContent='Không tìm thấy. Kiểm tra lại mã hoặc liên hệ GVCN.'; return;
+      errEl.textContent='Không tìm thấy mã này. Mã tra cứu là 6 chữ số ngày-tháng-năm sinh (VD: 070111 cho 07/01/2011). Liên hệ GVCN nếu cần hỗ trợ.'; return;
     }
     const allData = await fetchAllStudentData(student.stt, student.ma);
     codeSubmit.disabled=false; codeSubmit.textContent='🔍 Tra cứu điểm';
