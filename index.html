@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<!-- v2.4 cache-bust 2026-09-12 -->
+<!-- v2.5 cache-bust 2026-09-12 -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1169,7 +1169,7 @@ async function renderPublic(){
     return '';
   };
   const twoColGrid = (students) => `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-top:6px;">
+    <div style="display:flex;flex-direction:column;gap:2px;margin-top:6px;">
       ${students.map(s=>`<div style="font-size:13px;display:flex;align-items:center;gap:5px;padding:3px 0;">${escapeHtml(s.name)}${permLabel(s)}</div>`).join('')}
     </div>`;
   const attHtml = `
